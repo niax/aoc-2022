@@ -6,11 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-thiserror = "1.0.30"
-itertools = "0.10.3"
+thiserror = "1.0.37"
+itertools = "0.10.5"
 lazy_static = "1.4.0"
-petgraph = "0.6.0"
+petgraph = "0.6.2"
 bitvec = "1.0.1"
-cached = "0.26.2"
+cached = "0.40.0"
 regex = "1"
-fasthash = "0.4.0"

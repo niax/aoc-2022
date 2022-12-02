@@ -3,7 +3,8 @@ use std::collections::BinaryHeap;
 use aoc2022::commons::io::load_argv_records;
 
 fn main() {
-    let mut sums: BinaryHeap<u32> = load_argv_records("").map(|res| res.unwrap().iter().sum())
+    let mut sums: BinaryHeap<u32> = load_argv_records("")
+        .map(|res| res.unwrap().iter().sum())
         .collect();
 
     let mut sum = 0;

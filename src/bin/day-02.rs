@@ -84,7 +84,9 @@ impl Round {
     }
 
     pub fn intended_score(&self) -> u32 {
-        let play_desired_for_outcome = self.opponent.play_desired_for_outcome(&self.intended_outcome);
+        let play_desired_for_outcome = self
+            .opponent
+            .play_desired_for_outcome(&self.intended_outcome);
         play_desired_for_outcome.base_score() + self.intended_outcome.score()
     }
 }
@@ -112,7 +114,7 @@ impl FromStr for Round {
         };
 
         match it.next() {
-            Some(' ') => {},
+            Some(' ') => {}
             _ => return Err(ParseError::ParseError),
         }
 
@@ -133,14 +135,13 @@ impl FromStr for Round {
             _ => return Err(ParseError::ParseError),
         };
 
-        Ok(Round{
+        Ok(Round {
             opponent,
             mine,
             intended_outcome,
         })
     }
 }
-
 
 fn main() {
     let input: Vec<Round> = load_argv_lines().map(|res| res.unwrap()).collect();

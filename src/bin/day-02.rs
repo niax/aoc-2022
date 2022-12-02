@@ -10,6 +10,16 @@ enum Outcome {
     Win,
 }
 
+impl Outcome {
+    pub fn score(&self) -> u32 {
+        match self {
+            Outcome::Win => 6,
+            Outcome::Draw => 3,
+            Outcome::Lose => 0,
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum Play {
     Rock,
@@ -19,18 +29,28 @@ enum Play {
 
 impl Play {
     pub fn base_score(&self) -> u32 {
-        match *self {
+        match self {
             Play::Rock => 1,
             Play::Paper => 2,
             Play::Scissors => 3,
         }
     }
 
-    pub fn beats(&self, other: &Play) -> bool {
-        match *self {
-            Play::Rock => *other == Play::Scissors,
-            Play::Paper => *other == Play::Rock,
-            Play::Scissors => *other == Play::Paper,
+    pub fn outcome(&self, other: &Play) -> Outcome {
+        if self == other {
+            Outcome::Draw
+        } else {
+            let win = match self {
+                Play::Rock => *other == Play::Scissors,
+                Play::Paper => *other == Play::Rock,
+                Play::Scissors => *other == Play::Paper,
+            };
+
+            if win {
+                Outcome::Win
+            } else {
+                Outcome::Lose
+            }
         }
     }
 
@@ -60,23 +80,12 @@ struct Round {
 
 impl Round {
     pub fn score(&self) -> u32 {
-        let win_score = match (self.mine.beats(&self.opponent), self.opponent.beats(&self.mine)) {
-            (true, false) => 6,
-            (false, true) => 0,
-            (_, _) => 3,
-        };
-        win_score + self.mine.base_score()
+        self.mine.outcome(&self.opponent).score() + self.mine.base_score()
     }
 
     pub fn intended_score(&self) -> u32 {
         let play_desired_for_outcome = self.opponent.play_desired_for_outcome(&self.intended_outcome);
-        let win_score = match self.intended_outcome {
-            Outcome::Win => 6,
-            Outcome::Lose => 0,
-            Outcome::Draw => 3,
-        };
-
-        play_desired_for_outcome.base_score() + win_score
+        play_desired_for_outcome.base_score() + self.intended_outcome.score()
     }
 }
 

@@ -23,9 +23,9 @@ fn main() {
         let compartment_size = backpack.len() / 2;
         let c1_range = ..compartment_size;
 
-        let mut c1 = HashSet::new();
-        let mut c2 = HashSet::new();
-        let mut combined = HashSet::new();
+        let mut c1 = HashSet::with_capacity(128);
+        let mut c2 = HashSet::with_capacity(128);
+        let mut combined = HashSet::with_capacity(128);
         for (j, ch) in backpack.chars().enumerate() {
             let priority = priority_for_char(ch);
             if c1_range.contains(&j) {
@@ -53,7 +53,7 @@ fn main() {
                     part2 += priority;
                 }
             }
-            group_items = HashMap::new();
+            group_items = HashMap::with_capacity(128);
         }
     }
 

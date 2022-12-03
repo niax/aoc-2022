@@ -48,12 +48,12 @@ fn main() {
         part1 += common;
 
         if i % 3 == 2 {
-            for (priority, count) in group_items {
-                if count == 3 {
+            for (priority, count) in &group_items {
+                if *count == 3 {
                     part2 += priority;
                 }
             }
-            group_items = HashMap::with_capacity(128);
+            group_items.clear();
         }
     }
 

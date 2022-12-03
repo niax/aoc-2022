@@ -46,20 +46,20 @@ impl FromStr for Bag {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (s1, s2) = s.split_at(s.len() / 2);
-        Ok(Bag {
-            c1: s1
-                .chars()
-                .map(priority_for_char)
-                .collect::<Result<_, _>>()?,
-            c2: s2
-                .chars()
-                .map(priority_for_char)
-                .collect::<Result<_, _>>()?,
-            all: s
-                .chars()
-                .map(priority_for_char)
-                .collect::<Result<_, _>>()?,
-        })
+        let mut c1 = HashSet::with_capacity(128);
+        let mut c2 = HashSet::with_capacity(128);
+        let mut all = HashSet::with_capacity(128);
+        for c in s1.chars() {
+            let p = priority_for_char(c)?;
+            c1.insert(p);
+            all.insert(p);
+        }
+        for c in s2.chars() {
+            let p = priority_for_char(c)?;
+            c2.insert(p);
+            all.insert(p);
+        }
+        Ok(Bag { c1, c2, all })
     }
 }
 

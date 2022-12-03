@@ -1,8 +1,8 @@
 use aoc2022::commons::io::load_argv_lines;
-use std::collections::HashSet;
 use std::error::Error;
 use std::str::FromStr;
 use thiserror::Error;
+use bitvec::prelude::*;
 
 #[derive(Debug, Error, Hash, Eq, PartialEq)]
 enum ParseError {
@@ -29,35 +29,36 @@ fn priority_for_char(ch: char) -> Result<usize, ParseError> {
 
 #[derive(Debug)]
 struct Bag {
-    c1: HashSet<usize>,
-    c2: HashSet<usize>,
-    all: HashSet<usize>,
+    c1: BitArray<[u64; 1]>,
+    c2: BitArray<[u64; 1]>,
+    all: BitArray<[u64; 1]>,
 }
 
 impl Bag {
     pub fn badge(&self) -> Option<usize> {
-        let mut inter = self.c1.intersection(&self.c2);
-        inter.next().copied()
+        let inter = self.c1 & self.c2;
+        inter.first_one()
     }
 }
+
 
 impl FromStr for Bag {
     type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (s1, s2) = s.split_at(s.len() / 2);
-        let mut c1 = HashSet::with_capacity(128);
-        let mut c2 = HashSet::with_capacity(128);
-        let mut all = HashSet::with_capacity(128);
+        let mut c1 = bitarr![u64, Lsb0; 0; 64];
+        let mut c2 = bitarr![u64, Lsb0; 0; 64];
+        let mut all = bitarr![u64, Lsb0; 0; 64];
         for c in s1.chars() {
             let p = priority_for_char(c)?;
-            c1.insert(p);
-            all.insert(p);
+            c1.set(p, true);
+            all.set(p, true);
         }
         for c in s2.chars() {
             let p = priority_for_char(c)?;
-            c2.insert(p);
-            all.insert(p);
+            c2.set(p, true);
+            all.set(p, true);
         }
         Ok(Bag { c1, c2, all })
     }
@@ -73,15 +74,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let part2: usize = input
         .chunks_exact(3)
         .map(|window| {
-            let common = window[0]
-                .all
-                .intersection(&window[1].all)
-                .copied()
-                .collect::<HashSet<usize>>();
-            common
-                .intersection(&window[2].all)
-                .next()
-                .copied()
+            let inter = window[0].all & window[1].all & window[2].all;
+            inter.first_one()
                 .ok_or(RunError::NoMatch)
         })
         .sum::<Result<_, _>>()?;

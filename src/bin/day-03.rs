@@ -1,8 +1,8 @@
-use thiserror::Error;
 use aoc2022::commons::io::load_argv_lines;
 use std::collections::HashSet;
 use std::error::Error;
 use std::str::FromStr;
+use thiserror::Error;
 
 #[derive(Debug, Error, Hash, Eq, PartialEq)]
 enum ParseError {
@@ -47,21 +47,36 @@ impl FromStr for Bag {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (s1, s2) = s.split_at(s.len() / 2);
         Ok(Bag {
-            c1: s1.chars().map(|c| priority_for_char(c)).collect::<Result<_, _>>()?,
-            c2: s2.chars().map(|c| priority_for_char(c)).collect::<Result<_, _>>()?,
-            all: s.chars().map(|c| priority_for_char(c)).collect::<Result<_, _>>()?,
+            c1: s1
+                .chars()
+                .map(priority_for_char)
+                .collect::<Result<_, _>>()?,
+            c2: s2
+                .chars()
+                .map(priority_for_char)
+                .collect::<Result<_, _>>()?,
+            all: s
+                .chars()
+                .map(priority_for_char)
+                .collect::<Result<_, _>>()?,
         })
     }
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let input: Vec<Bag> = load_argv_lines().map(|res| res).collect::<Result<_, _>>()?;
+    let input: Vec<Bag> = load_argv_lines().collect::<Result<_, _>>()?;
 
     let part1: usize = input.iter().map(|b| b.badge().unwrap()).sum();
-    let part2: usize = input.chunks_exact(3).map(|window| {
-        window[0].all.intersection(&window[1].all).find(|priority| window[2].all.contains(priority)).ok_or(RunError::NoMatch)
-    }).sum::<Result<_, _>>()?;
-
+    let part2: usize = input
+        .chunks_exact(3)
+        .map(|window| {
+            window[0]
+                .all
+                .intersection(&window[1].all)
+                .find(|priority| window[2].all.contains(priority))
+                .ok_or(RunError::NoMatch)
+        })
+        .sum::<Result<_, _>>()?;
 
     println!("{}", part1);
     println!("{}", part2);

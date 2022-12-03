@@ -2,6 +2,17 @@ use aoc2022::commons::io::load_argv_lines;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
+fn priority_for_char(ch: char) -> usize {
+    let c = ch as usize;
+    if (65..92).contains(&c) {
+        c - 64 + 26
+    } else if (97..123).contains(&c) {
+        c - 96
+    } else {
+        panic!("Bad priority: {}", c);
+    }
+}
+
 fn main() {
     let input: Vec<String> = load_argv_lines().map(|res| res.unwrap()).collect();
 
@@ -10,10 +21,21 @@ fn main() {
     let mut group_items = HashMap::new();
     for (i, backpack) in input.iter().enumerate() {
         let compartment_size = backpack.len() / 2;
-        let c1: HashSet<char> = backpack[..compartment_size].chars().collect();
-        let c2: HashSet<char> = backpack[compartment_size..].chars().collect();
+        let c1_range = ..compartment_size;
 
-        let combined: HashSet<char> = backpack.chars().collect();
+        let mut c1 = HashSet::new();
+        let mut c2 = HashSet::new();
+        let mut combined = HashSet::new();
+        for (j, ch) in backpack.chars().enumerate() {
+            let priority = priority_for_char(ch);
+            if c1_range.contains(&j) {
+                c1.insert(priority);
+            } else {
+                c2.insert(priority);
+            };
+            combined.insert(priority);
+        }
+
         for c in combined {
             let entry = group_items.entry(c).or_insert(0);
             *entry += 1;
@@ -23,28 +45,11 @@ fn main() {
         let common = inter.next().unwrap();
         assert_eq!(inter.next(), None);
 
-        let charcode = *common as u32;
-
-        let priority = if (65..92).contains(&charcode) {
-            charcode - 64 + 26
-        } else if (97..123).contains(&charcode) {
-            charcode - 96
-        } else {
-            panic!("Bad priority");
-        };
-        part1 += priority;
+        part1 += common;
 
         if i % 3 == 2 {
-            for (item, count) in group_items {
-                let charcode = item as u32;
+            for (priority, count) in group_items {
                 if count == 3 {
-                    let priority = if (65..92).contains(&charcode) {
-                        charcode - 64 + 26
-                    } else if (97..123).contains(&charcode) {
-                        charcode - 96
-                    } else {
-                        panic!("Bad priority");
-                    };
                     part2 += priority;
                 }
             }

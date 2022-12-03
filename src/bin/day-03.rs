@@ -66,14 +66,22 @@ impl FromStr for Bag {
 fn main() -> Result<(), Box<dyn Error>> {
     let input: Vec<Bag> = load_argv_lines().collect::<Result<_, _>>()?;
 
-    let part1: usize = input.iter().map(|b| b.badge().unwrap()).sum();
+    let part1: usize = input
+        .iter()
+        .map(|b| b.badge().ok_or(RunError::NoMatch))
+        .sum::<Result<_, _>>()?;
     let part2: usize = input
         .chunks_exact(3)
         .map(|window| {
-            window[0]
+            let common = window[0]
                 .all
                 .intersection(&window[1].all)
-                .find(|priority| window[2].all.contains(priority))
+                .copied()
+                .collect::<HashSet<usize>>();
+            common
+                .intersection(&window[2].all)
+                .next()
+                .copied()
                 .ok_or(RunError::NoMatch)
         })
         .sum::<Result<_, _>>()?;

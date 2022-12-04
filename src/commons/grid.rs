@@ -291,7 +291,7 @@ impl<T> VecGrid<T> {
     }
 
     pub fn edges(&self) -> Vec<Vec<&T>> {
-        if self.width == None || self.rows.is_empty() {
+        if self.width.is_none() || self.rows.is_empty() {
             // There are all empty edges when we don't have any content
             vec![Vec::new(), Vec::new(), Vec::new(), Vec::new()]
         } else {
@@ -323,7 +323,7 @@ impl<T> Grid for VecGrid<T> {
 
     fn at(&self, coord: &Self::Coordinate) -> Option<&T> {
         let (x, y) = coord;
-        self.rows.get(*y).map(|row| row.get(*x)).flatten()
+        self.rows.get(*y).and_then(|row| row.get(*x))
     }
 
     fn set(&mut self, coord: Self::Coordinate, value: T) {

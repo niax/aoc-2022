@@ -191,10 +191,7 @@ mod tests {
             let mut input_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
             input_path.push(case.input_path);
             let s = fs::read_to_string(input_path).unwrap();
-            let input: Vec<Round> = s
-                .lines()
-                .map(|l| l.parse().unwrap())
-                .collect();
+            let input: Vec<Round> = s.lines().map(|l| l.parse().unwrap()).collect();
 
             assert_eq!(part1(&input), case.part1_expected);
             assert_eq!(part2(&input), case.part2_expected);

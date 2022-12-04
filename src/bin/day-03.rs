@@ -89,8 +89,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 #[cfg(test)]
 mod tests {
-    use aoc2022::commons::test_helpers::TestCase;
     use super::*;
+    use aoc2022::commons::test_helpers::TestCase;
 
     #[test]
     fn test_solution() {

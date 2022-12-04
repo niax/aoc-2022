@@ -1,5 +1,4 @@
 use aoc2022::commons::io::load_argv_lines;
-use peg;
 use peg::str::LineCol;
 use std::error::Error;
 use std::ops::RangeInclusive;
@@ -10,9 +9,14 @@ peg::parser! {
         rule number() -> u8
             = n:$(['0'..='9']+) {? n.parse().or(Err("bad number")) }
 
+        rule range() -> RangeInclusive<u8>
+            = start:number() "-" end:number() {
+                start..=end
+            }
+
         pub rule assignment() -> Assignment
-            = n1:number() "-" n2:number() "," n3:number() "-" n4:number() {
-                Assignment { first: (n1..=n2), second: (n3..=n4) }
+            = first:range() "," second:range() {
+                Assignment { first, second }
             }
     }
 
@@ -63,9 +67,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 #[cfg(test)]
 mod tests {
-    use aoc2022::commons::test_helpers::TestCase;
     use super::*;
-
+    use aoc2022::commons::test_helpers::TestCase;
 
     #[test]
     fn test_solution() {

@@ -31,11 +31,10 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use aoc2022::commons::test_helpers::TestCase;
     use aoc2022::commons::io::parse_records;
+    use aoc2022::commons::test_helpers::TestCase;
 
     use super::*;
-
 
     #[test]
     fn test_solution() {

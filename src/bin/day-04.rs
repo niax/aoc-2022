@@ -1,9 +1,9 @@
 use aoc2022::commons::io::load_argv_lines;
+use peg;
 use peg::str::LineCol;
 use std::error::Error;
 use std::ops::RangeInclusive;
 use std::str::FromStr;
-use peg;
 
 peg::parser! {
     grammar assignment_parser() for str {
@@ -59,4 +59,43 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("{}", part2(&input));
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{fs, path::PathBuf};
+
+    use super::*;
+
+    struct TestCase {
+        input_path: &'static str,
+        part1_expected: usize,
+        part2_expected: usize,
+    }
+
+    #[test]
+    fn test_solution() {
+        let cases = [
+            TestCase {
+                input_path: "inputs/extra/04.sample",
+                part1_expected: 2,
+                part2_expected: 4,
+            },
+            TestCase {
+                input_path: "inputs/04",
+                part1_expected: 567,
+                part2_expected: 907,
+            },
+        ];
+
+        for case in cases {
+            let mut input_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+            input_path.push(case.input_path);
+            let s = fs::read_to_string(input_path).unwrap();
+            let input: Vec<Assignment> = s.lines().map(|l| l.parse().unwrap()).collect();
+
+            assert_eq!(part1(&input), case.part1_expected);
+            assert_eq!(part2(&input), case.part2_expected);
+        }
+    }
 }

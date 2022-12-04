@@ -31,17 +31,11 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use std::{fs, path::PathBuf};
-
+    use aoc2022::commons::test_helpers::TestCase;
     use aoc2022::commons::io::parse_records;
 
     use super::*;
 
-    struct TestCase {
-        input_path: &'static str,
-        part1_expected: u32,
-        part2_expected: u32,
-    }
 
     #[test]
     fn test_solution() {
@@ -59,9 +53,7 @@ mod tests {
         ];
 
         for case in cases {
-            let mut input_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-            input_path.push(case.input_path);
-            let s = fs::read_to_string(input_path).unwrap();
+            let s = case.load_file();
             let mut input = parse_records(s.lines().map(|l| Ok(l.to_string())), "".to_string())
                 .map(|res| res.unwrap().iter().sum())
                 .collect();

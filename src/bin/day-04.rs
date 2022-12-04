@@ -63,15 +63,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 #[cfg(test)]
 mod tests {
-    use std::{fs, path::PathBuf};
-
+    use aoc2022::commons::test_helpers::TestCase;
     use super::*;
 
-    struct TestCase {
-        input_path: &'static str,
-        part1_expected: usize,
-        part2_expected: usize,
-    }
 
     #[test]
     fn test_solution() {
@@ -89,9 +83,7 @@ mod tests {
         ];
 
         for case in cases {
-            let mut input_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-            input_path.push(case.input_path);
-            let s = fs::read_to_string(input_path).unwrap();
+            let s = case.load_file();
             let input: Vec<Assignment> = s.lines().map(|l| l.parse().unwrap()).collect();
 
             assert_eq!(part1(&input), case.part1_expected);

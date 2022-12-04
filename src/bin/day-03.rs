@@ -18,14 +18,11 @@ enum RunError {
 
 fn priority_for_char(ch: char) -> Result<usize, ParseError> {
     let c = ch as usize;
-    let x = match ch {
+    match ch {
         'A'..='Z' => Ok(c - 64 + 26),
         'a'..='z' => Ok(c - 96),
         _ => Err(ParseError::BadItem),
-    };
-    println!("{} => {:?}", ch, x);
-
-    x
+    }
 }
 
 #[derive(Debug)]

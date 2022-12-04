@@ -1,8 +1,8 @@
 use aoc2022::commons::io::load_argv_lines;
+use bitvec::prelude::*;
 use std::error::Error;
 use std::str::FromStr;
 use thiserror::Error;
-use bitvec::prelude::*;
 
 #[derive(Debug, Error, Hash, Eq, PartialEq)]
 enum ParseError {
@@ -18,13 +18,14 @@ enum RunError {
 
 fn priority_for_char(ch: char) -> Result<usize, ParseError> {
     let c = ch as usize;
-    if (65..92).contains(&c) {
-        Ok(c - 64 + 26)
-    } else if (97..123).contains(&c) {
-        Ok(c - 96)
-    } else {
-        Err(ParseError::BadItem)
-    }
+    let x = match ch {
+        'A'..='Z' => Ok(c - 64 + 26),
+        'a'..='z' => Ok(c - 96),
+        _ => Err(ParseError::BadItem),
+    };
+    println!("{} => {:?}", ch, x);
+
+    x
 }
 
 #[derive(Debug)]
@@ -40,7 +41,6 @@ impl Bag {
         inter.first_one()
     }
 }
-
 
 impl FromStr for Bag {
     type Err = ParseError;
@@ -64,24 +64,70 @@ impl FromStr for Bag {
     }
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    let input: Vec<Bag> = load_argv_lines().collect::<Result<_, _>>()?;
-
-    let part1: usize = input
+fn part1(input: &[Bag]) -> Result<usize, RunError> {
+    input
         .iter()
         .map(|b| b.badge().ok_or(RunError::NoMatch))
-        .sum::<Result<_, _>>()?;
-    let part2: usize = input
+        .sum::<Result<_, _>>()
+}
+
+fn part2(input: &[Bag]) -> Result<usize, RunError> {
+    input
         .chunks_exact(3)
         .map(|window| {
             let inter = window[0].all & window[1].all & window[2].all;
-            inter.first_one()
-                .ok_or(RunError::NoMatch)
+            inter.first_one().ok_or(RunError::NoMatch)
         })
-        .sum::<Result<_, _>>()?;
+        .sum::<Result<_, _>>()
+}
 
-    println!("{}", part1);
-    println!("{}", part2);
+fn main() -> Result<(), Box<dyn Error>> {
+    let input: Vec<Bag> = load_argv_lines().collect::<Result<_, _>>()?;
+
+    println!("{}", part1(&input)?);
+    println!("{}", part2(&input)?);
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{fs, path::PathBuf};
+
+    use super::*;
+
+    struct TestCase {
+        input_path: &'static str,
+        part1_expected: usize,
+        part2_expected: usize,
+    }
+
+    #[test]
+    fn test_solution() {
+        let cases = [
+            TestCase {
+                input_path: "inputs/extra/03.sample",
+                part1_expected: 157,
+                part2_expected: 70,
+            },
+            TestCase {
+                input_path: "inputs/03",
+                part1_expected: 8123,
+                part2_expected: 2620,
+            },
+        ];
+
+        for case in cases {
+            let mut input_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+            input_path.push(case.input_path);
+            let s = fs::read_to_string(input_path).unwrap();
+            let input: Vec<Bag> = s
+                .lines()
+                .map(|l| l.parse().unwrap())
+                .collect();
+
+            assert_eq!(part1(&input), Ok(case.part1_expected));
+            assert_eq!(part2(&input), Ok(case.part2_expected));
+        }
+    }
 }

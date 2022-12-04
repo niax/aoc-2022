@@ -143,12 +143,61 @@ impl FromStr for Round {
     }
 }
 
-fn main() {
-    let input: Vec<Round> = load_argv_lines().map(|res| res.unwrap()).collect();
+fn part1(input: &[Round]) -> u32 {
+    input.iter().map(|r| r.score()).sum()
+}
 
-    let part1: u32 = input.iter().map(|r| r.score()).sum();
-    println!("{:?}", part1);
+fn part2(input: &[Round]) -> u32 {
+    input.iter().map(|r| r.intended_score()).sum()
+}
 
-    let part2: u32 = input.iter().map(|r| r.intended_score()).sum();
-    println!("{:?}", part2);
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let input: Vec<Round> = load_argv_lines().collect::<Result<_, _>>()?;
+
+    println!("{:?}", part1(&input));
+    println!("{:?}", part2(&input));
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{fs, path::PathBuf};
+
+    use super::*;
+
+    struct TestCase {
+        input_path: &'static str,
+        part1_expected: u32,
+        part2_expected: u32,
+    }
+
+    #[test]
+    fn test_solution() {
+        let cases = [
+            TestCase {
+                input_path: "inputs/extra/02.sample",
+                part1_expected: 15,
+                part2_expected: 12,
+            },
+            TestCase {
+                input_path: "inputs/02",
+                part1_expected: 13565,
+                part2_expected: 12424,
+            },
+        ];
+
+        for case in cases {
+            let mut input_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+            input_path.push(case.input_path);
+            let s = fs::read_to_string(input_path).unwrap();
+            let input: Vec<Round> = s
+                .lines()
+                .map(|l| l.parse().unwrap())
+                .collect();
+
+            assert_eq!(part1(&input), case.part1_expected);
+            assert_eq!(part2(&input), case.part2_expected);
+        }
+    }
 }

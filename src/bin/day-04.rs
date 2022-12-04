@@ -1,25 +1,25 @@
 use aoc2022::commons::io::load_argv_lines;
-use lazy_static::lazy_static;
-use regex::Regex;
+use peg::str::LineCol;
 use std::error::Error;
 use std::ops::RangeInclusive;
 use std::str::FromStr;
-use thiserror::Error;
+use peg;
 
-lazy_static! {
-    static ref PARSE_REGEX: Regex = Regex::new(r"(\d+)-(\d+),(\d+)-(\d+)").unwrap();
-}
+peg::parser! {
+    grammar assignment_parser() for str {
+        rule number() -> u8
+            = n:$(['0'..='9']+) {? n.parse().or(Err("bad number")) }
 
-#[derive(Debug, Error, Eq, PartialEq)]
-enum ParseError {
-    #[error("Bad line")]
-    BadLine,
-    #[error("Bad number")]
-    BadNumber(#[from] std::num::ParseIntError),
+        pub rule assignment() -> Assignment
+            = n1:number() "-" n2:number() "," n3:number() "-" n4:number() {
+                Assignment { first: (n1..=n2), second: (n3..=n4) }
+            }
+    }
+
 }
 
 #[derive(Debug)]
-struct Assignment {
+pub struct Assignment {
     first: RangeInclusive<u8>,
     second: RangeInclusive<u8>,
 }
@@ -37,24 +37,10 @@ impl Assignment {
 }
 
 impl FromStr for Assignment {
-    type Err = ParseError;
+    type Err = peg::error::ParseError<LineCol>;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // TODO: errors
-        let captures = PARSE_REGEX.captures(s).ok_or(ParseError::BadLine)?;
-        let numbers: Vec<u8> = captures
-            .iter()
-            .skip(1) // Ignore group 0
-            .map(|group| match group {
-                Some(g) => g.as_str().parse::<u8>().map_err(ParseError::from),
-                None => Err(ParseError::BadLine),
-            })
-            .collect::<Result<_, _>>()?;
-
-        Ok(Assignment {
-            first: numbers[0]..=numbers[1],
-            second: numbers[2]..=numbers[3],
-        })
+        assignment_parser::assignment(s)
     }
 }
 

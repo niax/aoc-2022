@@ -28,6 +28,11 @@ impl Assignment {
         (self.first.contains(&self.second.start()) && self.first.contains(&self.second.end())) ||
             (self.second.contains(&self.first.start()) && self.second.contains(&self.first.end()))
     }
+
+    pub fn any_overlap(&self) -> bool {
+        (self.first.contains(&self.second.start()) || self.first.contains(&self.second.end())) ||
+            (self.second.contains(&self.first.start()) || self.second.contains(&self.first.end()))
+    }
 }
 
 impl FromStr for Assignment {
@@ -49,7 +54,7 @@ fn part1(input: &[Assignment]) -> Result<usize, RunError> {
 }
 
 fn part2(input: &[Assignment]) -> Result<usize, RunError> {
-    Ok(0)
+    Ok(input.iter().filter(|a| a.any_overlap()).count())
 }
 
 fn main() -> Result<(), Box<dyn Error>> {

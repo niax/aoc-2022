@@ -51,7 +51,7 @@ impl PuzzleInput {
     pub fn from_lines(lines: &[String]) -> Result<PuzzleInput, ParseError<LineCol>> {
         // Find the point that ends stack defs and moves to instructions
         let split_point = lines.iter().position(|s| s.is_empty()).unwrap();
-        let stack_count = (lines[0].len() + 1) / 4;
+        let stack_count = (lines[split_point - 1].len() + 1) / 4;
         let mut stacks: Vec<Vec<char>> = (0..stack_count)
             .map(|_| Vec::with_capacity(split_point))
             .collect();
@@ -102,11 +102,8 @@ fn part1(input: &PuzzleInput) -> String {
 fn part2(input: &PuzzleInput) -> String {
     let mut stacks = input.stacks.clone();
     for instruction in &input.instructions {
-        let mut new_entries = Vec::with_capacity(instruction.count);
-        for _ in 0..instruction.count {
-            new_entries.push(stacks[instruction.from].pop().unwrap());
-        }
-        new_entries.reverse();
+        let src = &mut stacks[instruction.from];
+        let new_entries = src.split_off(src.len() - instruction.count);
         stacks[instruction.to].extend(new_entries);
     }
 
@@ -140,6 +137,11 @@ mod tests {
                 part1_expected: "FRDSQRRCD".to_string(),
                 part2_expected: "HRFTQVWNN".to_string(),
             },
+            //TestCase {
+            //input_path: "inputs/extra/05.dataforce",
+            //part1_expected: "QNHWJVJZW".to_string(),
+            //part2_expected: "BPCZJLFJW".to_string(),
+            //},
         ];
 
         for case in cases {

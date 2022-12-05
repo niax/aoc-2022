@@ -45,6 +45,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
+    let mut part1_stacks = stacks.clone();
+    let mut part2_stacks = stacks.clone();
+
     let re = Regex::new(r"move (\d+) from (\d+) to (\d+)")?;
     for instruction in moves {
         let groups = re.captures(&instruction).unwrap();
@@ -52,18 +55,27 @@ fn main() -> Result<(), Box<dyn Error>> {
         let from = groups.get(2).unwrap().as_str().parse::<usize>().unwrap() - 1;
         let to = groups.get(3).unwrap().as_str().parse::<usize>().unwrap() - 1;
 
+        let mut new_entries = Vec::with_capacity(n);
         for _ in 0..n {
-            let c = stacks[from].pop().unwrap();
-            stacks[to].push(c);
+            let c = part1_stacks[from].pop().unwrap();
+            part1_stacks[to].push(c);
+            new_entries.insert(0, part2_stacks[from].pop().unwrap());
         }
+        part2_stacks[to].extend(new_entries);
+
         println!("{} {} {}", n, from, to);
     }
 
     let mut s = String::new();
-    for stack in stacks {
+    for stack in part1_stacks {
         s += &stack.last().unwrap().to_string();
     }
+    println!("{}", s);
 
+    let mut s = String::new();
+    for stack in part2_stacks {
+        s += &stack.last().unwrap().to_string();
+    }
     println!("{}", s);
     Ok(())
 }

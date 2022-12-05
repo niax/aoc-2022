@@ -1,4 +1,5 @@
 use aoc2022::commons::io::load_argv_lines;
+use peg::{error::ParseError, str::LineCol};
 use std::error::Error;
 
 peg::parser! {
@@ -47,7 +48,7 @@ struct PuzzleInput {
 }
 
 impl PuzzleInput {
-    pub fn from_lines(lines: &[String]) -> PuzzleInput {
+    pub fn from_lines(lines: &[String]) -> Result<PuzzleInput, ParseError<LineCol>> {
         // Find the point that ends stack defs and moves to instructions
         let split_point = lines.iter().position(|s| s.is_empty()).unwrap();
         let stack_count = (lines[0].len() + 1) / 4;
@@ -55,28 +56,26 @@ impl PuzzleInput {
             .map(|_| Vec::with_capacity(split_point))
             .collect();
         for l in &lines[0..split_point - 1] {
-            for (i, c_opt) in shipment_parser::shipping_crates(l)
-                .unwrap()
-                .into_iter()
-                .enumerate()
-            {
+            for (i, c_opt) in shipment_parser::shipping_crates(l)?.into_iter().enumerate() {
                 if let Some(c) = c_opt {
-                    // TODO: Make this suck less
-                    stacks[i].insert(0, c);
+                    stacks[i].push(c);
                 }
             }
+        }
+
+        for s in &mut stacks {
+            s.reverse();
         }
 
         let instructions = lines[split_point + 1..]
             .iter()
             .map(|s| shipment_parser::move_instruction(s))
-            .collect::<Result<_, _>>()
-            .unwrap();
+            .collect::<Result<_, _>>()?;
 
-        PuzzleInput {
+        Ok(PuzzleInput {
             stacks,
             instructions,
-        }
+        })
     }
 }
 
@@ -115,7 +114,7 @@ fn part2(input: &PuzzleInput) -> String {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let input = PuzzleInput::from_lines(&load_argv_lines().collect::<Result<Vec<String>, _>>()?);
+    let input = PuzzleInput::from_lines(&load_argv_lines().collect::<Result<Vec<String>, _>>()?)?;
 
     println!("{}", part1(&input));
     println!("{}", part2(&input));
@@ -149,7 +148,7 @@ mod tests {
                 .lines()
                 .map(|s| s.to_string())
                 .collect::<Vec<_>>();
-            let input = PuzzleInput::from_lines(&s);
+            let input = PuzzleInput::from_lines(&s).unwrap();
 
             assert_eq!(part1(&input), case.part1_expected);
             assert_eq!(part2(&input), case.part2_expected);

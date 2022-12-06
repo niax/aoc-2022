@@ -1,8 +1,8 @@
 use aoc2022::commons::io::load_argv_lines;
 use std::collections::HashMap;
 use std::collections::VecDeque;
-use std::hash::Hash;
 use std::error::Error;
+use std::hash::Hash;
 
 #[derive(Debug)]
 struct Window<T> {
@@ -10,7 +10,7 @@ struct Window<T> {
     window: VecDeque<Option<T>>,
 }
 
-impl<T: Eq + Hash + Copy + std::fmt::Debug> Window<T> {
+impl<T: Eq + Hash + Copy> Window<T> {
     fn new(len: usize) -> Window<T> {
         let mut window = VecDeque::with_capacity(len);
         for _ in 0..len {
@@ -28,9 +28,15 @@ impl<T: Eq + Hash + Copy + std::fmt::Debug> Window<T> {
         *previous += 1;
         self.window.push_back(Some(i));
 
-        let fall_off = self.window.pop_front().expect("Window should never be empty");
+        let fall_off = self
+            .window
+            .pop_front()
+            .expect("Window should never be empty");
         if let Some(j) = fall_off {
-            let falling_off_count = self.counts.get_mut(&j).expect("Previous count should not be empty");
+            let falling_off_count = self
+                .counts
+                .get_mut(&j)
+                .expect("Previous count should not be empty");
             *falling_off_count -= 1;
             if *falling_off_count == 0 {
                 self.counts.remove(&j);
@@ -43,7 +49,7 @@ impl<T: Eq + Hash + Copy + std::fmt::Debug> Window<T> {
     }
 }
 
-fn solve(input: &String, len: usize) -> usize {
+fn solve(input: &str, len: usize) -> usize {
     let mut window = Window::new(len);
 
     for (i, c) in input.chars().into_iter().enumerate() {

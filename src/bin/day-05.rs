@@ -137,11 +137,11 @@ mod tests {
                 part1_expected: "FRDSQRRCD".to_string(),
                 part2_expected: "HRFTQVWNN".to_string(),
             },
-            //TestCase {
-            //input_path: "inputs/extra/05.dataforce",
-            //part1_expected: "QNHWJVJZW".to_string(),
-            //part2_expected: "BPCZJLFJW".to_string(),
-            //},
+            TestCase {
+                input_path: "inputs/extra/05.dataforce",
+                part1_expected: "QNHWJVJZW".to_string(),
+                part2_expected: "BPCZJLFJW".to_string(),
+            },
         ];
 
         for case in cases {

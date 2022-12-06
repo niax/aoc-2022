@@ -2,27 +2,29 @@ use aoc2022::commons::io::load_argv_lines;
 use std::collections::HashSet;
 use std::error::Error;
 
-fn part1(input: &String) -> usize {
-    for i in 0..(input.len() - 4) {
-        let substr = &input[i..i + 4];
+fn solve(input: &String, len: usize) -> usize {
+    for i in 0..(input.len() - len) {
+        let substr = &input[i..i + len];
         let charset = substr.chars().collect::<HashSet<char>>();
-        println!("{} - {:?}", substr, charset);
-        if charset.len() == 4 {
-            return i + 4;
+        if charset.len() == len {
+            return i + len;
         }
     }
     panic!("NOT HERE");
 }
 
+fn part1(input: &String) -> usize {
+    solve(input, 4)
+}
+
 fn part2(input: &String) -> usize {
-    0
+    solve(input, 14)
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let lines = load_argv_lines().collect::<Result<Vec<String>, _>>()?;
     let input = &lines[0];
 
-    println!("{:?}", input);
     println!("{}", part1(input));
     println!("{}", part2(input));
 
@@ -39,7 +41,7 @@ mod tests {
         let cases = [TestCase {
             input_path: "inputs/extra/06.sample",
             part1_expected: 7,
-            part2_expected: 0,
+            part2_expected: 19,
         }];
 
         for case in cases {

@@ -121,6 +121,9 @@ fn part2(input: &[usize]) -> usize {
 fn main() -> Result<(), Box<dyn Error>> {
     let mut s = String::new();
     get_argv_reader().get_mut().read_to_string(&mut s)?;
+    if !s.ends_with('\n') {
+        s.push('\n');
+    }
     let input = parse(&s)?;
 
     println!("{}", part1(&input));

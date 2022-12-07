@@ -1,35 +1,90 @@
-use aoc2022::commons::io::load_argv_lines;
+use aoc2022::commons::io::get_argv_reader;
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::PathBuf;
 
-fn parse(input: &[String]) -> Vec<usize> {
+#[derive(Debug)]
+pub enum LsEntry {
+    Directory(String),
+    File(usize, String),
+}
+
+#[derive(Debug)]
+pub enum Command {
+    Ls(Vec<LsEntry>),
+    Cd(String),
+}
+
+peg::parser! {
+    grammar shell_parser() for str {
+        rule number() -> usize
+            = n:$(['0'..='9']+) {? n.parse().or(Err("bad number")) }
+
+        rule path() -> String
+            = n:$(['!'..='~']+) { n.to_string() }
+
+        rule dir_entry() -> LsEntry
+            = "dir " p:path() { LsEntry::Directory(p.to_string()) }
+
+        rule file_entry() -> LsEntry
+            = size:number() " " p:path() { LsEntry::File(size, p.to_string()) }
+
+        rule ls_entry() -> LsEntry
+            = (dir_entry() / file_entry())
+
+        rule ls_line() -> LsEntry
+            = entry:ls_entry() "\n" { entry }
+
+        rule ls_lines() -> Vec<LsEntry>
+            = ls_line()+
+
+        rule ls() -> Command
+            = "$ ls\n" lines:ls_lines() {
+                Command::Ls(lines)
+        }
+
+        rule cd() -> Command
+            = "$ cd " p:path() "\n" {
+                Command::Cd(p.to_string())
+        }
+
+        rule cmd_entry() -> Command
+            = ls() / cd()
+
+        pub rule cmds() -> Vec<Command>
+            = cmd_entry()+
+    }
+}
+
+fn parse(input: &str) -> Result<Vec<usize>, Box<dyn Error>> {
+    let cmds = shell_parser::cmds(input)?;
+
     let mut sizes = HashMap::new();
     let root = PathBuf::new();
     let mut current = root.clone();
 
-    for line in input {
-        let parts = line.split(' ').collect::<Vec<&str>>();
-        match parts[0] {
-            "$" => match parts[1] {
-                "cd" => {
-                    current = match parts[2] {
-                        "/" => root.to_path_buf(),
-                        ".." => current.parent().unwrap().to_path_buf(),
-                        a => current.join(a),
-                    };
-                }
-                "ls" => {}
-                _ => panic!("Dunno about {}", parts[1]),
-            },
-            "dir" => {}
-            size_str => {
-                let size = size_str.parse::<usize>().unwrap();
-                let c = current.clone();
-                for ancestor in c.ancestors() {
-                    let entry = sizes.entry(ancestor.to_path_buf());
-                    let ancestor_size = entry.or_insert(0);
-                    *ancestor_size += size;
+    for cmd in cmds {
+        match cmd {
+            Command::Cd(path) => {
+                current = match path.as_str() {
+                    "/" => root.to_path_buf(),
+                    ".." => current.parent().unwrap().to_path_buf(),
+                    _a => current.join(path),
+                };
+            }
+            Command::Ls(files) => {
+                for file in files {
+                    match file {
+                        LsEntry::File(size, _) => {
+                            let c = current.clone();
+                            for ancestor in c.ancestors() {
+                                let entry = sizes.entry(ancestor.to_path_buf());
+                                let ancestor_size = entry.or_insert(0);
+                                *ancestor_size += size;
+                            }
+                        }
+                        _ => {}
+                    }
                 }
             }
         }
@@ -37,7 +92,7 @@ fn parse(input: &[String]) -> Vec<usize> {
 
     let mut dir_sizes = sizes.values().copied().collect::<Vec<_>>();
     dir_sizes.sort();
-    dir_sizes
+    Ok(dir_sizes)
 }
 
 fn part1(input: &[usize]) -> usize {
@@ -64,7 +119,9 @@ fn part2(input: &[usize]) -> usize {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let input = parse(&load_argv_lines().collect::<Result<Vec<String>, _>>()?);
+    let mut s = String::new();
+    get_argv_reader().get_mut().read_to_string(&mut s)?;
+    let input = parse(&s)?;
 
     println!("{}", part1(&input));
     println!("{}", part2(&input));
@@ -94,11 +151,7 @@ mod tests {
 
         for case in cases {
             let s = case.load_file();
-            let input = parse(
-                &s.lines()
-                    .map(|x| x.parse().unwrap())
-                    .collect::<Vec<String>>(),
-            );
+            let input = parse(&s).unwrap();
             assert_eq!(part1(&input), case.part1_expected);
             assert_eq!(part2(&input), case.part2_expected);
         }

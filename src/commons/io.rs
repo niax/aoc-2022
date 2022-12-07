@@ -16,7 +16,7 @@ pub enum ParseLinesError<L: StdError> {
     ParseError(L),
 }
 
-fn get_argv_reader() -> BufReader<Box<dyn Read>> {
+pub fn get_argv_reader() -> BufReader<Box<dyn Read>> {
     let read: Box<dyn Read> = match env::args().nth(1) {
         Some(path) => Box::new(File::open(path).expect("File")),
         None => Box::new(io::stdin()),

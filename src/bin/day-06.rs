@@ -61,11 +61,11 @@ fn solve(input: &str, len: usize) -> usize {
     panic!("NOT HERE");
 }
 
-fn part1(input: &String) -> usize {
+fn part1(input: &str) -> usize {
     solve(input, 4)
 }
 
-fn part2(input: &String) -> usize {
+fn part2(input: &str) -> usize {
     solve(input, 14)
 }
 

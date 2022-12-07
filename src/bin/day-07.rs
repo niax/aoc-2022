@@ -2,7 +2,7 @@ use aoc2022::commons::io::load_argv_lines;
 use petgraph::{graph::NodeIndex, Direction, Graph};
 use std::error::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct INode {
     name: String,
     size: usize,
@@ -24,7 +24,7 @@ fn update_sizes(g: &mut Graph<INode, ()>, current: NodeIndex<u32>) -> usize {
     child_sizes
 }
 
-fn part1(input: &[String]) -> usize {
+fn parse(input: &[String]) -> Vec<INode> {
     let mut g = Graph::<INode, ()>::new();
     let root = g.add_node(INode {
         name: "".to_string(),
@@ -33,7 +33,7 @@ fn part1(input: &[String]) -> usize {
     });
     let mut current = root;
     for line in input {
-        let parts = line.split(" ").collect::<Vec<&str>>();
+        let parts = line.split(' ').collect::<Vec<&str>>();
         match parts[0] {
             "$" => {
                 match parts[1] {
@@ -89,27 +89,40 @@ fn part1(input: &[String]) -> usize {
     let mut dir_sizes = g
         .node_indices()
         .map(|idx| g.node_weight(idx).unwrap())
+        .cloned()
         .filter(|inode| inode.size == 0)
         .collect::<Vec<_>>();
     dir_sizes.sort_by_key(|inode| inode.child_sizes);
+    dir_sizes
+}
+
+fn part1(input: &[INode]) -> usize {
     let mut sum = 0;
-    for dir in &dir_sizes {
+    for dir in input {
         if dir.child_sizes > 100000 {
             continue;
         }
         sum += dir.child_sizes;
     }
 
-    println!("{:?}", dir_sizes);
     sum
 }
 
-fn part2(input: &[String]) -> usize {
-    0
+fn part2(input: &[INode]) -> usize {
+    let available = 70000000 - input.last().unwrap().child_sizes;
+    let want = 30000000;
+    for dir in input {
+        println!("{:?}", dir);
+        if (available + dir.child_sizes) > want {
+            println!("{:?}", dir);
+            return dir.child_sizes;
+        }
+    }
+    panic!("not found");
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let input = load_argv_lines().collect::<Result<Vec<String>, _>>()?;
+    let input = parse(&load_argv_lines().collect::<Result<Vec<String>, _>>()?);
 
     println!("{}", part1(&input));
     println!("{}", part2(&input));
@@ -139,10 +152,11 @@ mod tests {
 
         for case in cases {
             let s = case.load_file();
-            let input = s
-                .lines()
-                .map(|x| x.parse().unwrap())
-                .collect::<Vec<String>>();
+            let input = parse(
+                &s.lines()
+                    .map(|x| x.parse().unwrap())
+                    .collect::<Vec<String>>(),
+            );
             assert_eq!(part1(&input), case.part1_expected);
             assert_eq!(part2(&input), case.part2_expected);
         }

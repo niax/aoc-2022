@@ -1,118 +1,63 @@
 use aoc2022::commons::io::load_argv_lines;
-use petgraph::{graph::NodeIndex, Direction, Graph};
+use std::collections::HashMap;
 use std::error::Error;
+use std::path::PathBuf;
 
-#[derive(Debug, Clone)]
-struct INode {
-    name: String,
-    size: usize,
-    child_sizes: usize,
-}
+fn parse(input: &[String]) -> Vec<usize> {
+    let mut sizes = HashMap::new();
+    let root = PathBuf::new();
+    let mut current = root.clone();
 
-fn update_sizes(g: &mut Graph<INode, ()>, current: NodeIndex<u32>) -> usize {
-    let children = g
-        .neighbors_directed(current, Direction::Outgoing)
-        .collect::<Vec<_>>();
-    let mut child_sizes = 0;
-    for child in children {
-        child_sizes += update_sizes(g, child);
-    }
-    let current_inode = g.node_weight_mut(current).unwrap();
-    child_sizes += current_inode.size;
-    current_inode.child_sizes = child_sizes;
-
-    child_sizes
-}
-
-fn parse(input: &[String]) -> Vec<INode> {
-    let mut g = Graph::<INode, ()>::new();
-    let root = g.add_node(INode {
-        name: "".to_string(),
-        size: 0,
-        child_sizes: 0,
-    });
-    let mut current = root;
     for line in input {
         let parts = line.split(' ').collect::<Vec<&str>>();
         match parts[0] {
-            "$" => {
-                match parts[1] {
-                    "cd" => {
-                        current = match parts[2] {
-                            "/" => root,
-                            ".." => {
-                                let mut parent_nodes =
-                                    g.neighbors_directed(current, Direction::Incoming);
-                                parent_nodes.next().unwrap()
-                            }
-                            a => {
-                                // Check for existing neighbour
-                                let mut found_child = None;
-                                for child in g.neighbors_directed(current, Direction::Outgoing) {
-                                    if g.node_weight(child).unwrap().name == a {
-                                        found_child = Some(child);
-                                    }
-                                }
-                                if let Some(child) = found_child {
-                                    child
-                                } else {
-                                    let new_node = g.add_node(INode {
-                                        name: a.to_string(),
-                                        size: 0,
-                                        child_sizes: 0,
-                                    });
-                                    g.add_edge(current, new_node, ());
-
-                                    new_node
-                                }
-                            }
-                        };
-                    }
-                    "ls" => {}
-                    _ => panic!("Dunno about {}", parts[1]),
+            "$" => match parts[1] {
+                "cd" => {
+                    current = match parts[2] {
+                        "/" => root.to_path_buf(),
+                        ".." => current.parent().unwrap().to_path_buf(),
+                        a => current.join(a),
+                    };
                 }
-            }
+                "ls" => {}
+                _ => panic!("Dunno about {}", parts[1]),
+            },
             "dir" => {}
             size_str => {
-                let new_node = g.add_node(INode {
-                    name: parts[1].to_string(),
-                    size: size_str.parse().unwrap(),
-                    child_sizes: 0,
-                });
-                g.add_edge(current, new_node, ());
+                let size = size_str.parse::<usize>().unwrap();
+                let c = current.clone();
+                for ancestor in c.ancestors() {
+                    let entry = sizes.entry(ancestor.to_path_buf());
+                    let ancestor_size = entry.or_insert(0);
+                    *ancestor_size += size;
+                }
             }
         }
     }
 
-    update_sizes(&mut g, root);
-    let mut dir_sizes = g
-        .node_indices()
-        .map(|idx| g.node_weight(idx).unwrap())
-        .cloned()
-        .filter(|inode| inode.size == 0)
-        .collect::<Vec<_>>();
-    dir_sizes.sort_by_key(|inode| inode.child_sizes);
+    let mut dir_sizes = sizes.values().copied().collect::<Vec<_>>();
+    dir_sizes.sort();
     dir_sizes
 }
 
-fn part1(input: &[INode]) -> usize {
+fn part1(input: &[usize]) -> usize {
     let mut sum = 0;
-    for dir in input {
-        if dir.child_sizes > 100000 {
+    for &size in input {
+        if size > 100000 {
             continue;
         }
-        sum += dir.child_sizes;
+        sum += size;
     }
 
     sum
 }
 
-fn part2(input: &[INode]) -> usize {
-    let available = 70000000 - input.last().unwrap().child_sizes;
+fn part2(input: &[usize]) -> usize {
+    let available = 70000000 - input.last().unwrap();
     let want = 30000000;
-    for dir in input {
-        if (available + dir.child_sizes) > want {
-            return dir.child_sizes;
+    for &size in input {
+        if (available + size) > want {
+            return size;
         }
     }
     panic!("not found");

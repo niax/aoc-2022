@@ -85,7 +85,6 @@ fn parse(input: &[String]) -> Vec<INode> {
     }
 
     update_sizes(&mut g, root);
-    println!("{:?}", g);
     let mut dir_sizes = g
         .node_indices()
         .map(|idx| g.node_weight(idx).unwrap())
@@ -112,9 +111,7 @@ fn part2(input: &[INode]) -> usize {
     let available = 70000000 - input.last().unwrap().child_sizes;
     let want = 30000000;
     for dir in input {
-        println!("{:?}", dir);
         if (available + dir.child_sizes) > want {
-            println!("{:?}", dir);
             return dir.child_sizes;
         }
     }
@@ -140,13 +137,13 @@ mod tests {
         let cases = [
             TestCase {
                 input_path: "inputs/extra/07.sample",
-                part1_expected: 0,
-                part2_expected: 0,
+                part1_expected: 95437,
+                part2_expected: 24933642,
             },
             TestCase {
                 input_path: "inputs/07",
-                part1_expected: 0,
-                part2_expected: 0,
+                part1_expected: 1644735,
+                part2_expected: 1300850,
             },
         ];
 

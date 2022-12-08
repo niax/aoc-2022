@@ -10,7 +10,6 @@ fn is_visible(grid: &SingleVecGrid<u8>, x: usize, y: usize) -> bool {
     let south = (y+1..grid.height()).map(|y| grid.at(&(x, y))).max().flatten();
 
 
-    println!("{:?} {:?} {:?} {:?} {:?}", (x, y), west, east, north, south);
     [west, east, north, south].iter().any(|dir| {
         match dir {
             None => true,
@@ -27,13 +26,65 @@ fn part1(input: &SingleVecGrid<u8>) -> usize {
             visible.set((x, y), is_visible(input, x, y));
         }
     }
-    visible.print('x', '.');
 
     visible.set_cell_count()
 }
 
+fn treehouse_score(grid: &SingleVecGrid<u8>, x: usize, y: usize) -> usize {
+    let tree_height = grid.at(&(x,y)).expect("Bad coord");
+
+    let mut north = 0;
+    for y in (0..y).rev() {
+        let tree = grid.at(&(x, y));
+        if let Some(height) = tree {
+            north += 1;
+            if height >= tree_height {
+                break;
+            }
+        }
+    }
+
+    let mut west = 0;
+    for x in (0..x).rev() {
+        let tree = grid.at(&(x, y));
+        if let Some(height) = tree {
+            west += 1;
+            if height >= tree_height {
+                break;
+            }
+        }
+    }
+
+    let mut east = 0;
+    for x in x+1..grid.width() {
+        let tree = grid.at(&(x, y));
+        if let Some(height) = tree {
+            east += 1;
+            if height >= tree_height {
+                break;
+            }
+        }
+    }
+
+    let mut south = 0;
+    for y in y+1..grid.height() {
+        let tree = grid.at(&(x, y));
+        if let Some(height) = tree {
+            south += 1;
+            if height >= tree_height {
+                break;
+            }
+        }
+    }
+    west * east * north * south
+}
+
 fn part2(input: &SingleVecGrid<u8>) -> usize {
-    0
+    (0..input.height()).map(|y| {
+        (0..input.width()).map(|x| {
+            treehouse_score(input, x, y)
+        }).max().unwrap_or(0)
+    }).max().unwrap_or(0)
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -45,8 +96,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             grid.set((x, y), c.to_string().parse()?);
         }
     }
-
-    println!("{:?}", grid);
 
     println!("{}", part1(&grid));
     println!("{}", part2(&grid));

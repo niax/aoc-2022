@@ -25,40 +25,8 @@ fn part1(input: &SingleVecGrid<u8>) -> usize {
     let mut visible = BitGrid::new(input.width(), input.height());
 
     for x in 0..input.width() {
-        // From top in
-        for y in 0..input.height() {
-            let tree_visible = is_visible(input, x, y);
-            visible.set((x, y), tree_visible);
-            if !tree_visible {
-                break;
-            }
-        }
-        // From bottom in
-        for y in (0..input.height()).rev() {
-            let tree_visible = is_visible(input, x, y);
-            visible.set((x, y), tree_visible);
-            if !tree_visible {
-                break;
-            }
-        }
-    }
-
-    for y in 0..input.width() {
-        // From left in
-        for x in 0..input.width() {
-            let tree_visible = is_visible(input, x, y);
-            visible.set((x, y), tree_visible);
-            if !tree_visible {
-                break;
-            }
-        }
-        // From bottom in
-        for x in (0..input.width()).rev() {
-            let tree_visible = is_visible(input, x, y);
-            visible.set((x, y), tree_visible);
-            if !tree_visible {
-                break;
-            }
+        for y in 0..input.width() {
+            visible.set((x, y), is_visible(input, x, y));
         }
     }
 
@@ -130,7 +98,7 @@ fn parse(input: &[String]) -> Result<SingleVecGrid<u8>, Box<dyn Error>> {
     let mut grid = SingleVecGrid::<u8>::new(input[0].len(), input.len());
     for (y, line) in input.iter().enumerate() {
         for (x, c) in line.chars().enumerate() {
-            grid.set((x, y), c.to_digit(10).unwrap() as u8);
+            grid.set((x, y), c.to_string().parse()?);
         }
     }
 

@@ -2,31 +2,48 @@ use aoc2022::commons::grid::{BitGrid, Grid, SingleVecGrid};
 use aoc2022::commons::io::load_argv_lines;
 use std::error::Error;
 
-fn is_visible(grid: &SingleVecGrid<u8>, x: usize, y: usize) -> bool {
-    let tree_height = grid.at(&(x, y)).expect("Bad coord");
-    let west = (0..x).map(|x| grid.at(&(x, y))).max().flatten();
-    let east = (x + 1..grid.width())
-        .map(|x| grid.at(&(x, y)))
-        .max()
-        .flatten();
-    let north = (0..y).map(|y| grid.at(&(x, y))).max().flatten();
-    let south = (y + 1..grid.height())
-        .map(|y| grid.at(&(x, y)))
-        .max()
-        .flatten();
-
-    [west, east, north, south].iter().any(|dir| match dir {
-        None => true,
-        Some(height) => tree_height > height,
-    })
-}
-
 fn part1(input: &SingleVecGrid<u8>) -> usize {
     let mut visible = BitGrid::new(input.width(), input.height());
 
     for x in 0..input.width() {
-        for y in 0..input.width() {
-            visible.set((x, y), is_visible(input, x, y));
+        // From top in
+        let mut max = None;
+        for y in 0..input.height() {
+            let tree_height = input.at(&(x, y));
+            if tree_height > max {
+                visible.set((x, y), true);
+                max = tree_height;
+            }
+        }
+        // From bottom in
+        let mut max = None;
+        for y in (0..input.height()).rev() {
+            let tree_height = input.at(&(x, y));
+            if tree_height > max {
+                visible.set((x, y), true);
+                max = tree_height;
+            }
+        }
+    }
+
+    for y in 0..input.height() {
+        // From left in
+        let mut max = None;
+        for x in 0..input.width() {
+            let tree_height = input.at(&(x, y));
+            if tree_height > max {
+                visible.set((x, y), true);
+                max = tree_height;
+            }
+        }
+        // From right in
+        let mut max = None;
+        for x in (0..input.width()).rev() {
+            let tree_height = input.at(&(x, y));
+            if tree_height > max {
+                visible.set((x, y), true);
+                max = tree_height;
+            }
         }
     }
 
@@ -98,7 +115,7 @@ fn parse(input: &[String]) -> Result<SingleVecGrid<u8>, Box<dyn Error>> {
     let mut grid = SingleVecGrid::<u8>::new(input[0].len(), input.len());
     for (y, line) in input.iter().enumerate() {
         for (x, c) in line.chars().enumerate() {
-            grid.set((x, y), c.to_string().parse()?);
+            grid.set((x, y), c.to_digit(10).unwrap() as u8);
         }
     }
 

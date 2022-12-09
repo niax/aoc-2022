@@ -1,12 +1,14 @@
-use aoc2022::commons::io::load_argv_lines;
 use aoc2022::commons::geom::Point;
 use aoc2022::commons::grid::{BitGrid, Grid};
+use aoc2022::commons::io::load_argv_lines;
 use std::error::Error;
 
 fn solve(input: &[Instruction]) -> (usize, usize) {
-    let mut elems = (0..=9).map(|_| Point::new(500isize, 500isize)).collect::<Vec<Point<isize>>>();
-    let mut part1 = BitGrid::new(1000, 1000);
-    let mut part2 = BitGrid::new(1000, 1000);
+    let mut elems = (0..=9)
+        .map(|_| Point::new(300_isize, 300_isize))
+        .collect::<Vec<Point<isize>>>();
+    let mut part1 = BitGrid::new(600, 600);
+    let mut part2 = BitGrid::new(600, 600);
 
     for instruction in input {
         for _ in 0..instruction.n() {
@@ -30,13 +32,10 @@ fn solve(input: &[Instruction]) -> (usize, usize) {
                 last = knot;
             }
 
-
-
             part1.set((*elems[1].x() as usize, *elems[1].y() as usize), true);
             part2.set((*elems[9].x() as usize, *elems[9].y() as usize), true);
         }
     }
-
 
     (part1.set_cell_count(), part2.set_cell_count())
 }
@@ -70,18 +69,21 @@ impl Instruction {
 }
 
 fn parse(input: &[String]) -> Vec<Instruction> {
-    input.iter().map(|l| {
-        let mut s = l.split(' ');
-        let first = s.next().unwrap();
-        let second = s.next().unwrap().parse().unwrap();
-        match first {
-            "U" => Instruction::Up(second),
-            "L" => Instruction::Left(second),
-            "D" => Instruction::Down(second),
-            "R" => Instruction::Right(second),
-            _ => unreachable!(),
-        }
-    }).collect::<Vec<_>>()
+    input
+        .iter()
+        .map(|l| {
+            let mut s = l.split(' ');
+            let first = s.next().unwrap();
+            let second = s.next().unwrap().parse().unwrap();
+            match first {
+                "U" => Instruction::Up(second),
+                "L" => Instruction::Left(second),
+                "D" => Instruction::Down(second),
+                "R" => Instruction::Right(second),
+                _ => unreachable!(),
+            }
+        })
+        .collect::<Vec<_>>()
 }
 
 fn main() -> Result<(), Box<dyn Error>> {

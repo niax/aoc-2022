@@ -3,7 +3,7 @@ use aoc2022::commons::io::load_argv_lines;
 use lazy_static::lazy_static;
 use std::error::Error;
 
-lazy_static!{
+lazy_static! {
     static ref DIRS: Vec<(isize, isize)> = vec![(0, -1), (-1, 0), (0, 1), (1, 0)];
 }
 

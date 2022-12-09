@@ -229,11 +229,7 @@ where
             })
     }
 
-    pub fn raycast(
-        &self,
-        from: (usize, usize),
-        step: (isize, isize),
-    ) -> RaycastIterator<Self> {
+    pub fn raycast(&self, from: (usize, usize), step: (isize, isize)) -> RaycastIterator<Self> {
         RaycastIterator {
             grid: self,
             step,

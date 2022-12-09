@@ -154,6 +154,46 @@ impl Grid for BitGrid {
     }
 }
 
+pub struct RaycastIterator<'a, G> {
+    grid: &'a G,
+    step: (isize, isize),
+    pos: (usize, usize),
+    finished: bool,
+}
+
+impl<'a, G, T: 'a> Iterator for RaycastIterator<'a, G>
+where
+    G: Grid<Value = T, Coordinate = (usize, usize)>,
+{
+    type Item = ((usize, usize), &'a T);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.finished {
+            return None;
+        }
+        let was = self.pos.clone();
+        // TODO: Switch to checked_add_signed when it stabilises
+        let new_x = if self.step.0 < 0 {
+            self.pos.0.checked_sub((-self.step.0) as usize)
+        } else {
+            self.pos.0.checked_add(self.step.0 as usize)
+        };
+        let new_y = if self.step.1 < 0 {
+            self.pos.1.checked_sub((-self.step.1) as usize)
+        } else {
+            self.pos.1.checked_add(self.step.1 as usize)
+        };
+
+        if new_x.is_none() || new_y.is_none() {
+            self.finished = true;
+        } else {
+            self.pos = (new_x.unwrap(), new_y.unwrap());
+        }
+
+        self.grid.at(&was).map(|x| (was, x))
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct SingleVecGrid<T> {
     values: Vec<T>,
@@ -196,6 +236,39 @@ where
                 let coord = (x as usize, y as usize);
                 (coord, self.at(&coord).unwrap())
             })
+    }
+
+    pub fn raycast<'a>(
+        &'a self,
+        from: (usize, usize),
+        step: (isize, isize),
+    ) -> RaycastIterator<'a, Self> {
+        RaycastIterator {
+            grid: self,
+            step,
+            pos: from,
+            finished: false,
+        }
+    }
+
+    pub fn north_from(&self, coord: (usize, usize)) -> impl Iterator<Item = Option<&T>> {
+        let (x, y) = coord;
+        (0..y).rev().map(move |y| self.at(&(x, y)))
+    }
+
+    pub fn south_from(&self, coord: (usize, usize)) -> impl Iterator<Item = Option<&T>> {
+        let (x, y) = coord;
+        (y + 1..self.height()).rev().map(move |y| self.at(&(x, y)))
+    }
+
+    pub fn west_from(&self, coord: (usize, usize)) -> impl Iterator<Item = Option<&T>> {
+        let (x, y) = coord;
+        (0..x).rev().map(move |x| self.at(&(x, y)))
+    }
+
+    pub fn east_from(&self, coord: (usize, usize)) -> impl Iterator<Item = Option<&T>> {
+        let (x, y) = coord;
+        (x + 1..self.width()).rev().map(move |x| self.at(&(x, y)))
     }
 
     fn index(&self, x: usize, y: usize) -> Option<usize> {

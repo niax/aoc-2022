@@ -52,51 +52,17 @@ fn part1(input: &SingleVecGrid<u8>) -> usize {
 
 fn treehouse_score(grid: &SingleVecGrid<u8>, x: usize, y: usize) -> usize {
     let tree_height = grid.at(&(x, y)).expect("Bad coord");
-
-    let mut north = 0;
-    for y in (0..y).rev() {
-        let tree = grid.at(&(x, y));
-        if let Some(height) = tree {
-            north += 1;
-            if height >= tree_height {
+    let dirs = vec![(0, -1), (-1, 0), (0, 1), (1, 0)];
+    dirs.iter().map(|step| {
+        let mut score = 0;
+        for (_, tree) in grid.raycast((x, y), *step).skip(1) {
+            score += 1;
+            if tree >= tree_height {
                 break;
             }
         }
-    }
-
-    let mut west = 0;
-    for x in (0..x).rev() {
-        let tree = grid.at(&(x, y));
-        if let Some(height) = tree {
-            west += 1;
-            if height >= tree_height {
-                break;
-            }
-        }
-    }
-
-    let mut east = 0;
-    for x in x + 1..grid.width() {
-        let tree = grid.at(&(x, y));
-        if let Some(height) = tree {
-            east += 1;
-            if height >= tree_height {
-                break;
-            }
-        }
-    }
-
-    let mut south = 0;
-    for y in y + 1..grid.height() {
-        let tree = grid.at(&(x, y));
-        if let Some(height) = tree {
-            south += 1;
-            if height >= tree_height {
-                break;
-            }
-        }
-    }
-    west * east * north * south
+        score
+    }).product()
 }
 
 fn part2(input: &SingleVecGrid<u8>) -> usize {

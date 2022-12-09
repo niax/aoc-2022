@@ -169,25 +169,15 @@ impl Iterator for RaycastCoordsIterator {
             return None;
         }
         let was = self.pos;
-        // TODO: Switch to checked_add_signed when it stabilises
-        let new_x = if self.step.0 < 0 {
-            self.pos.0.checked_sub((-self.step.0) as usize)
-        } else {
-            self.pos.0.checked_add(self.step.0 as usize)
-        };
-        let new_y = if self.step.1 < 0 {
-            self.pos.1.checked_sub((-self.step.1) as usize)
-        } else {
-            self.pos.1.checked_add(self.step.1 as usize)
-        };
 
-        match (new_x, new_y) {
-            (Some(new_x), Some(new_y)) if new_x < self.max.0 && new_y < self.max.1 => {
-                self.pos = (new_x, new_y);
-            },
-            _ => {
-                self.out_of_bounds = true;
-            },
+        let new_x = (self.pos.0 as isize) + self.step.0;
+        let new_y = (self.pos.1 as isize) + self.step.1;
+
+        if new_x < 0 || new_x >= self.max.0 as isize ||
+            new_y < 0 || new_y >= self.max.1 as isize {
+            self.out_of_bounds = true;
+        } else {
+            self.pos = (new_x as usize, new_y as usize);
         }
 
         Some(was)
@@ -279,26 +269,6 @@ where
             max: (self.width(), self.height()),
             out_of_bounds: false,
         }
-    }
-
-    pub fn north_from(&self, coord: (usize, usize)) -> impl Iterator<Item = Option<&T>> {
-        let (x, y) = coord;
-        (0..y).rev().map(move |y| self.at(&(x, y)))
-    }
-
-    pub fn south_from(&self, coord: (usize, usize)) -> impl Iterator<Item = Option<&T>> {
-        let (x, y) = coord;
-        (y + 1..self.height()).rev().map(move |y| self.at(&(x, y)))
-    }
-
-    pub fn west_from(&self, coord: (usize, usize)) -> impl Iterator<Item = Option<&T>> {
-        let (x, y) = coord;
-        (0..x).rev().map(move |x| self.at(&(x, y)))
-    }
-
-    pub fn east_from(&self, coord: (usize, usize)) -> impl Iterator<Item = Option<&T>> {
-        let (x, y) = coord;
-        (x + 1..self.width()).rev().map(move |x| self.at(&(x, y)))
     }
 
     fn index(&self, x: usize, y: usize) -> Option<usize> {

@@ -1,6 +1,11 @@
 use aoc2022::commons::grid::{BitGrid, Grid, SingleVecGrid};
 use aoc2022::commons::io::load_argv_lines;
+use lazy_static::lazy_static;
 use std::error::Error;
+
+lazy_static!{
+    static ref DIRS: Vec<(isize, isize)> = vec![(0, -1), (-1, 0), (0, 1), (1, 0)];
+}
 
 fn part1(input: &SingleVecGrid<u8>) -> usize {
     let mut visible = BitGrid::new(input.width(), input.height());
@@ -52,8 +57,7 @@ fn part1(input: &SingleVecGrid<u8>) -> usize {
 
 fn treehouse_score(grid: &SingleVecGrid<u8>, x: usize, y: usize) -> usize {
     let tree_height = grid.at(&(x, y)).expect("Bad coord");
-    let dirs = vec![(0, -1), (-1, 0), (0, 1), (1, 0)];
-    dirs.iter()
+    DIRS.iter()
         .map(|step| {
             let mut score = 0;
             for tree in grid.raycast((x, y), *step).skip(1) {

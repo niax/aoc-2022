@@ -53,18 +53,16 @@ fn part1(input: &SingleVecGrid<u8>) -> usize {
 fn treehouse_score(grid: &SingleVecGrid<u8>, x: usize, y: usize) -> usize {
     let tree_height = grid.at(&(x, y)).expect("Bad coord");
     let dirs = vec![(0, -1), (-1, 0), (0, 1), (1, 0)];
-    dirs.iter()
-        .map(|step| {
-            let mut score = 0;
-            for tree in grid.raycast((x, y), *step).skip(1) {
-                score += 1;
-                if tree >= tree_height {
-                    break;
-                }
+    dirs.iter().map(|step| {
+        let mut score = 0;
+        for (_, tree) in grid.raycast((x, y), *step).skip(1) {
+            score += 1;
+            if tree >= tree_height {
+                break;
             }
-            score
-        })
-        .product()
+        }
+        score
+    }).product()
 }
 
 fn part2(input: &SingleVecGrid<u8>) -> usize {

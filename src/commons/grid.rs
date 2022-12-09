@@ -157,8 +157,7 @@ impl Grid for BitGrid {
 pub struct RaycastIterator<'a, G> {
     grid: &'a G,
     step: (isize, isize),
-    pos: (usize, usize),
-    finished: bool,
+    pos: (isize, isize),
 }
 
 impl<'a, G, T: 'a> Iterator for RaycastIterator<'a, G>
@@ -168,29 +167,21 @@ where
     type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.finished {
+        let was = self.pos;
+        self.pos = (self.pos.0 + self.step.0, self.pos.1 + self.step.1);
+
+        let x = if was.0 >= 0 {
+            was.0 as usize
+        } else {
             return None;
-        }
-        let was = self.pos.clone();
-        // TODO: Switch to checked_add_signed when it stabilises
-        let new_x = if self.step.0 < 0 {
-            self.pos.0.checked_sub((-self.step.0) as usize)
-        } else {
-            self.pos.0.checked_add(self.step.0 as usize)
         };
-        let new_y = if self.step.1 < 0 {
-            self.pos.1.checked_sub((-self.step.1) as usize)
+        let y = if was.1 >= 0 {
+            was.1 as usize
         } else {
-            self.pos.1.checked_add(self.step.1 as usize)
+            return None;
         };
 
-        if new_x.is_none() || new_y.is_none() {
-            self.finished = true;
-        } else {
-            self.pos = (new_x.unwrap(), new_y.unwrap());
-        }
-
-        self.grid.at(&was)
+        self.grid.at(&(x, y))
     }
 }
 
@@ -238,16 +229,15 @@ where
             })
     }
 
-    pub fn raycast<'a>(
-        &'a self,
+    pub fn raycast(
+        &self,
         from: (usize, usize),
         step: (isize, isize),
-    ) -> RaycastIterator<'a, Self> {
+    ) -> RaycastIterator<Self> {
         RaycastIterator {
             grid: self,
             step,
-            pos: from,
-            finished: false,
+            pos: (from.0 as isize, from.1 as isize),
         }
     }
 

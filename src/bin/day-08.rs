@@ -55,7 +55,7 @@ fn treehouse_score(grid: &SingleVecGrid<u8>, x: usize, y: usize) -> usize {
     let dirs = vec![(0, -1), (-1, 0), (0, 1), (1, 0)];
     dirs.iter().map(|step| {
         let mut score = 0;
-        for (_, tree) in grid.raycast((x, y), *step).skip(1) {
+        for tree in grid.raycast((x, y), *step).skip(1) {
             score += 1;
             if tree >= tree_height {
                 break;

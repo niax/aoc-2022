@@ -165,7 +165,7 @@ impl<'a, G, T: 'a> Iterator for RaycastIterator<'a, G>
 where
     G: Grid<Value = T, Coordinate = (usize, usize)>,
 {
-    type Item = ((usize, usize), &'a T);
+    type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.finished {
@@ -190,7 +190,7 @@ where
             self.pos = (new_x.unwrap(), new_y.unwrap());
         }
 
-        self.grid.at(&was).map(|x| (was, x))
+        self.grid.at(&was)
     }
 }
 

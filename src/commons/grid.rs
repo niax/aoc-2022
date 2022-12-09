@@ -154,24 +154,21 @@ impl Grid for BitGrid {
     }
 }
 
-pub struct RaycastIterator<'a, G> {
-    grid: &'a G,
+pub struct RaycastCoordsIterator {
     step: (isize, isize),
     pos: (usize, usize),
-    finished: bool,
+    max: (usize, usize),
+    out_of_bounds: bool,
 }
 
-impl<'a, G, T: 'a> Iterator for RaycastIterator<'a, G>
-where
-    G: Grid<Value = T, Coordinate = (usize, usize)>,
-{
-    type Item = ((usize, usize), &'a T);
+impl Iterator for RaycastCoordsIterator {
+    type Item = (usize, usize);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.finished {
+        if self.out_of_bounds {
             return None;
         }
-        let was = self.pos.clone();
+        let was = self.pos;
         // TODO: Switch to checked_add_signed when it stabilises
         let new_x = if self.step.0 < 0 {
             self.pos.0.checked_sub((-self.step.0) as usize)
@@ -184,13 +181,35 @@ where
             self.pos.1.checked_add(self.step.1 as usize)
         };
 
-        if new_x.is_none() || new_y.is_none() {
-            self.finished = true;
-        } else {
-            self.pos = (new_x.unwrap(), new_y.unwrap());
+        match (new_x, new_y) {
+            (Some(new_x), Some(new_y)) if new_x < self.max.0 && new_y < self.max.1 => {
+                self.pos = (new_x, new_y);
+            },
+            _ => {
+                self.out_of_bounds = true;
+            },
         }
 
-        self.grid.at(&was).map(|x| (was, x))
+        Some(was)
+    }
+}
+
+pub struct RaycastItemsIterator<'a, G> {
+    grid: &'a G,
+    coord_iter: RaycastCoordsIterator,
+}
+
+impl<'a, G, T: 'a> Iterator for RaycastItemsIterator<'a, G>
+where
+    G: Grid<Value = T, Coordinate = (usize, usize)>,
+{
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.coord_iter
+            .next()
+            .as_ref()
+            .and_then(|c| self.grid.at(c))
     }
 }
 
@@ -238,16 +257,27 @@ where
             })
     }
 
-    pub fn raycast<'a>(
-        &'a self,
+    pub fn raycast(
+        &self,
         from: (usize, usize),
         step: (isize, isize),
-    ) -> RaycastIterator<'a, Self> {
-        RaycastIterator {
+    ) -> RaycastItemsIterator<Self> {
+        RaycastItemsIterator {
             grid: self,
+            coord_iter: self.raycast_coords(from, step),
+        }
+    }
+
+    pub fn raycast_coords(
+        &self,
+        from: (usize, usize),
+        step: (isize, isize),
+    ) -> RaycastCoordsIterator {
+        RaycastCoordsIterator {
             step,
             pos: from,
-            finished: false,
+            max: (self.width(), self.height()),
+            out_of_bounds: false,
         }
     }
 

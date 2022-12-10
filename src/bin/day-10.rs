@@ -1,5 +1,8 @@
-use aoc2022::commons::{io::load_argv_lines, grid::{BitGrid, Grid}};
-use std::{error::Error, str::FromStr, num::ParseIntError};
+use aoc2022::commons::{
+    grid::{BitGrid, Grid},
+    io::load_argv_lines,
+};
+use std::{error::Error, num::ParseIntError, str::FromStr};
 use thiserror::Error;
 
 #[derive(Debug)]
@@ -43,7 +46,6 @@ impl FromStr for Instruction {
     }
 }
 
-
 fn part1(input: &[Instruction]) -> isize {
     let mut x = 1;
     let mut x_values = Vec::new();
@@ -57,10 +59,13 @@ fn part1(input: &[Instruction]) -> isize {
         }
     }
 
-    [20, 60, 100, 140, 180, 220].iter().map(|i| {
-        let v = x_values[*i - 1];
-        *i as isize * v
-    }).sum()
+    [20, 60, 100, 140, 180, 220]
+        .iter()
+        .map(|i| {
+            let v = x_values[*i - 1];
+            *i as isize * v
+        })
+        .sum()
 }
 
 fn part2(input: &[Instruction]) -> String {
@@ -72,7 +77,7 @@ fn part2(input: &[Instruction]) -> String {
         for _ in 0..ins.cycle_count() {
             let y = clock / 40;
             let x = clock % 40;
-            let set = x_reg - 1 == x as isize || x_reg == x as isize || x_reg + 1 == x as isize;
+            let set = (x_reg - x as isize).abs() < 2;
             grid.set((x, y), set);
             clock += 1;
         }
@@ -100,13 +105,11 @@ mod tests {
 
     #[test]
     fn test_solution() {
-        let cases = [
-            TestCase {
-                input_path: "inputs/10",
-                part1_expected: 12560,
-                part2_expected: "PLPAFBCL".to_string(),
-            },
-        ];
+        let cases = [TestCase {
+            input_path: "inputs/10",
+            part1_expected: 12560,
+            part2_expected: "PLPAFBCL".to_string(),
+        }];
 
         for case in cases {
             let input = case

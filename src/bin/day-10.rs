@@ -19,10 +19,12 @@ impl Instruction {
 
 #[derive(Error, Debug)]
 enum ParseError {
+    #[error("Unknown instruction")]
+    UnknownInstruction,
+    #[error("Missing operand")]
+    MissingOperand,
     #[error("Parse fail")]
-    ParseFail,
-    #[error("Parse fail")]
-    IntParseFaile(#[from] ParseIntError),
+    IntParseFail(#[from] ParseIntError),
 }
 
 impl FromStr for Instruction {
@@ -33,10 +35,10 @@ impl FromStr for Instruction {
         match i.next() {
             Some("noop") => Ok(Instruction::Noop),
             Some("addx") => {
-                let x = i.next().ok_or(ParseError::ParseFail)?.parse()?;
+                let x = i.next().ok_or(ParseError::MissingOperand)?.parse()?;
                 Ok(Instruction::AddX(x))
             }
-            _ => Err(ParseError::ParseFail),
+            _ => Err(ParseError::UnknownInstruction),
         }
     }
 }

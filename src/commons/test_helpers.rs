@@ -1,12 +1,12 @@
 use std::{fs, path::PathBuf};
 
-pub struct TestCase<T> {
+pub struct TestCase<P1, P2> {
     pub input_path: &'static str,
-    pub part1_expected: T,
-    pub part2_expected: T,
+    pub part1_expected: P1,
+    pub part2_expected: P2,
 }
 
-impl<T> TestCase<T> {
+impl<P1, P2> TestCase<P1, P2> {
     pub fn load_file(&self) -> String {
         let mut input_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         input_path.push(self.input_path);

@@ -56,6 +56,103 @@ trait FullGrid: Grid {
     fn column_for_point(p: &Self::Coordinate) -> usize;
 }
 
+pub struct ResizingBitGrid {
+    values: BitVec,
+    width: usize,
+    height: usize,
+}
+
+impl ResizingBitGrid {
+    pub fn new(width: usize, height: usize) -> Self {
+        Self {
+            values: bitvec![0; width * height],
+            width,
+            height,
+        }
+    }
+
+    fn index_in(&self, x: usize, y: usize, width: usize, height: usize) -> Option<usize> {
+        if x >= width || y >= height {
+            None
+        } else {
+            Some(width * y + x)
+        }
+    }
+
+    fn index(&self, x: usize, y: usize) -> Option<usize> {
+        self.index_in(x, y, self.width, self.height)
+    }
+
+    fn resize(&mut self, new_width: usize, new_height: usize) {
+        let mut new_values = bitvec![0; new_width * new_height];
+        for i in self.values.iter_ones() {
+            let x = i % self.width;
+            let y = i / self.width;
+            let new_i = self
+                .index_in(x, y, new_width, new_height)
+                .expect("We really should have an index here");
+            new_values.set(new_i, true);
+        }
+        self.values = new_values;
+        self.height = new_height;
+        self.width = new_width;
+    }
+
+    pub fn set_cell_count(&self) -> usize {
+        self.values.count_ones()
+    }
+}
+
+impl Grid for ResizingBitGrid {
+    type Value = bool;
+    type Coordinate = (usize, usize);
+
+    fn height(&self) -> usize {
+        self.height
+    }
+
+    fn width(&self) -> usize {
+        self.width
+    }
+
+    fn at(&self, coord: &Self::Coordinate) -> Option<&Self::Value> {
+        let (x, y) = coord;
+        self.index(*x, *y).map(|i| &self.values[i])
+    }
+
+    fn set(&mut self, coord: Self::Coordinate, value: Self::Value) {
+        let (x, y) = coord;
+
+        let mut idx = self.index(x, y);
+        if idx.is_none() {
+            let delta_x = if x >= self.width {
+                x + 1 - self.width
+            } else {
+                0
+            };
+            let delta_y = if y >= self.height {
+                y + 1 - self.height
+            } else {
+                0
+            };
+            let new_width = self.width.max(self.width + delta_x * 2);
+            let new_height = self.height.max(self.height + delta_y * 2);
+            self.resize(new_width, new_height);
+            idx = self.index(x, y);
+        }
+        let i = idx.expect("Should now have index in range!");
+        *self.values.get_mut(i).unwrap() = value
+    }
+
+    fn points(&self) -> Vec<(Self::Coordinate, &Self::Value)> {
+        todo!()
+    }
+
+    fn from_rows(_: impl IntoIterator<Item = impl IntoIterator<Item = Self::Value>>) -> Self {
+        todo!()
+    }
+}
+
 pub struct BitGrid {
     values: BitVec,
     width: usize,

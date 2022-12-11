@@ -1,4 +1,4 @@
-use aoc2022::commons::io::{load_argv_lines, get_argv_reader};
+use aoc2022::commons::io::get_argv_reader;
 use std::error::Error;
 
 peg::parser! {
@@ -10,9 +10,6 @@ peg::parser! {
             = nums:(number() ** ", ")  {
                 nums
             }
-
-        rule starting_items() -> Vec<usize>
-            = "Starting items: " n:number_list() { n }
 
         rule var_num() -> Var =
             n: number() {
@@ -33,7 +30,7 @@ peg::parser! {
                 "- " v:var() {Operation::Sub(v)}
                 "* " v:var() {Operation::Mul(v)}
                 "/ " v:var() {Operation::Div(v)}
-            } 
+            }
 
         rule operation_str() -> Operation =
             "  Operation: new = old " o:operation() { o }
@@ -66,7 +63,7 @@ peg::parser! {
 
         pub rule monkeys() -> Vec<Monkey>
             = monkey() ** "\n"
-                
+
     }
 }
 
@@ -87,7 +84,7 @@ impl Var {
     pub fn get(&self, old: usize) -> usize {
         match self {
             Self::Literal(n) => *n,
-            Self::Old => old
+            Self::Old => old,
         }
     }
 }
@@ -124,17 +121,21 @@ fn part1(input: &[Monkey]) -> usize {
 
     for _ in 0..20 {
         for i in 0..input.len() {
-            let moves = input[i].items.iter().map(|item| {
-                inspections[i]+=1;
-                let monkey = &input[i];
-                let new_worry_level = input[i].op.apply(*item) / 3;
-                let throw_to = if new_worry_level % monkey.test.divisible_by == 0 {
-                    monkey.test.if_true
-                } else {
-                    monkey.test.if_false
-                };
-                (throw_to, new_worry_level)
-            }).collect::<Vec<_>>();
+            let moves = input[i]
+                .items
+                .iter()
+                .map(|item| {
+                    inspections[i] += 1;
+                    let monkey = &input[i];
+                    let new_worry_level = input[i].op.apply(*item) / 3;
+                    let throw_to = if new_worry_level % monkey.test.divisible_by == 0 {
+                        monkey.test.if_true
+                    } else {
+                        monkey.test.if_false
+                    };
+                    (throw_to, new_worry_level)
+                })
+                .collect::<Vec<_>>();
             input[i].items.clear();
 
             for (target, item) in moves {
@@ -149,7 +150,39 @@ fn part1(input: &[Monkey]) -> usize {
 }
 
 fn part2(input: &[Monkey]) -> usize {
-    0
+    let mut input = input.to_vec();
+    let mut inspections = (0..input.len()).map(|_| 0).collect::<Vec<_>>();
+
+    let div_multiplier = input.iter().map(|m| m.test.divisible_by).product::<usize>();
+
+    for _ in 0..10_000 {
+        for i in 0..input.len() {
+            let moves = input[i]
+                .items
+                .iter()
+                .map(|item| {
+                    inspections[i] += 1;
+                    let monkey = &input[i];
+                    let new_worry_level = input[i].op.apply(*item) % div_multiplier;
+                    let throw_to = if new_worry_level % monkey.test.divisible_by == 0 {
+                        monkey.test.if_true
+                    } else {
+                        monkey.test.if_false
+                    };
+                    (throw_to, new_worry_level)
+                })
+                .collect::<Vec<_>>();
+            input[i].items.clear();
+
+            for (target, item) in moves {
+                input[target].items.push(item);
+            }
+        }
+    }
+
+    inspections.sort();
+
+    inspections[inspections.len() - 1] * inspections[inspections.len() - 2]
 }
 
 fn parse(input: &str) -> Result<Vec<Monkey>, Box<dyn Error>> {
@@ -178,15 +211,15 @@ mod tests {
     #[test]
     fn test_solution() {
         let cases = [
-            //TestCase {
-                //input_path: "inputs/11",
-                //part1_expected: 0,
-                //part2_expected: 0,
-            //},
+            TestCase {
+                input_path: "inputs/11",
+                part1_expected: 64032,
+                part2_expected: 12729522272,
+            },
             TestCase {
                 input_path: "inputs/extra/11.sample",
                 part1_expected: 10605,
-                part2_expected: 0,
+                part2_expected: 2713310158,
             },
         ];
 

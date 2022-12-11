@@ -1,5 +1,5 @@
 use aoc2022::commons::io::get_argv_reader;
-use std::error::Error;
+use std::{cell::RefCell, error::Error};
 
 peg::parser! {
     grammar monkey_parser() for str {
@@ -58,6 +58,7 @@ peg::parser! {
                         items,
                         op,
                         test,
+                        inspections: 0,
                     }
                 }
 
@@ -113,62 +114,52 @@ pub struct Monkey {
     items: Vec<usize>,
     op: Operation,
     test: Test,
+    inspections: usize,
+}
+
+impl Monkey {
+    fn step(&mut self, monkeys: &[RefCell<Monkey>], worry_update_fn: impl Fn(usize) -> usize) {
+        for item in &self.items {
+            self.inspections += 1;
+            let new_worry_level = worry_update_fn(self.op.apply(*item));
+            let throw_to = if new_worry_level % self.test.divisible_by == 0 {
+                self.test.if_true
+            } else {
+                self.test.if_false
+            };
+            monkeys[throw_to].borrow_mut().items.push(new_worry_level);
+        }
+        self.items.clear();
+    }
+}
+
+fn solve(input: &[Monkey], iterations: usize, worry_update_fn: impl Fn(usize) -> usize) -> usize {
+    let mut input = input
+        .iter()
+        .map(|x| RefCell::new(x.clone()))
+        .collect::<Vec<_>>();
+
+    for _ in 0..iterations {
+        for monkey in &input {
+            monkey.borrow_mut().step(&input, &worry_update_fn);
+        }
+    }
+
+    input.sort_by_key(|m| m.borrow().inspections);
+
+    let last = input[input.len() - 1].borrow().inspections;
+    let second_last = input[input.len() - 2].borrow().inspections;
+
+    last * second_last
 }
 
 fn part1(input: &[Monkey]) -> usize {
-    let mut input = input.to_vec();
-    let mut inspections = (0..input.len()).map(|_| 0).collect::<Vec<_>>();
-
-    for _ in 0..20 {
-        for i in 0..input.len() {
-            let monkey = input[i].clone();
-            for item in monkey.items {
-                inspections[i] += 1;
-                let monkey = &input[i];
-                let new_worry_level = input[i].op.apply(item) / 3;
-                let throw_to = if new_worry_level % monkey.test.divisible_by == 0 {
-                    monkey.test.if_true
-                } else {
-                    monkey.test.if_false
-                };
-                input[throw_to].items.push(new_worry_level);
-            }
-            input[i].items.clear();
-        }
-    }
-
-    inspections.sort();
-
-    inspections[inspections.len() - 1] * inspections[inspections.len() - 2]
+    solve(input, 20, |x| x / 3)
 }
 
 fn part2(input: &[Monkey]) -> usize {
-    let mut input = input.to_vec();
-    let mut inspections = (0..input.len()).map(|_| 0).collect::<Vec<_>>();
-
     let div_multiplier = input.iter().map(|m| m.test.divisible_by).product::<usize>();
-
-    for _ in 0..10_000 {
-        for i in 0..input.len() {
-            let monkey = input[i].clone();
-            for item in monkey.items {
-                inspections[i] += 1;
-                let monkey = &input[i];
-                let new_worry_level = input[i].op.apply(item) % div_multiplier;
-                let throw_to = if new_worry_level % monkey.test.divisible_by == 0 {
-                    monkey.test.if_true
-                } else {
-                    monkey.test.if_false
-                };
-                input[throw_to].items.push(new_worry_level);
-            }
-            input[i].items.clear();
-        }
-    }
-
-    inspections.sort();
-
-    inspections[inspections.len() - 1] * inspections[inspections.len() - 2]
+    solve(input, 10_000, |x| x % div_multiplier)
 }
 
 fn parse(input: &str) -> Result<Vec<Monkey>, Box<dyn Error>> {

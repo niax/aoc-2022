@@ -121,26 +121,19 @@ fn part1(input: &[Monkey]) -> usize {
 
     for _ in 0..20 {
         for i in 0..input.len() {
-            let moves = input[i]
-                .items
-                .iter()
-                .map(|item| {
-                    inspections[i] += 1;
-                    let monkey = &input[i];
-                    let new_worry_level = input[i].op.apply(*item) / 3;
-                    let throw_to = if new_worry_level % monkey.test.divisible_by == 0 {
-                        monkey.test.if_true
-                    } else {
-                        monkey.test.if_false
-                    };
-                    (throw_to, new_worry_level)
-                })
-                .collect::<Vec<_>>();
-            input[i].items.clear();
-
-            for (target, item) in moves {
-                input[target].items.push(item);
+            let monkey = input[i].clone();
+            for item in monkey.items {
+                inspections[i] += 1;
+                let monkey = &input[i];
+                let new_worry_level = input[i].op.apply(item) / 3;
+                let throw_to = if new_worry_level % monkey.test.divisible_by == 0 {
+                    monkey.test.if_true
+                } else {
+                    monkey.test.if_false
+                };
+                input[throw_to].items.push(new_worry_level);
             }
+            input[i].items.clear();
         }
     }
 
@@ -157,26 +150,19 @@ fn part2(input: &[Monkey]) -> usize {
 
     for _ in 0..10_000 {
         for i in 0..input.len() {
-            let moves = input[i]
-                .items
-                .iter()
-                .map(|item| {
-                    inspections[i] += 1;
-                    let monkey = &input[i];
-                    let new_worry_level = input[i].op.apply(*item) % div_multiplier;
-                    let throw_to = if new_worry_level % monkey.test.divisible_by == 0 {
-                        monkey.test.if_true
-                    } else {
-                        monkey.test.if_false
-                    };
-                    (throw_to, new_worry_level)
-                })
-                .collect::<Vec<_>>();
-            input[i].items.clear();
-
-            for (target, item) in moves {
-                input[target].items.push(item);
+            let monkey = input[i].clone();
+            for item in monkey.items {
+                inspections[i] += 1;
+                let monkey = &input[i];
+                let new_worry_level = input[i].op.apply(item) % div_multiplier;
+                let throw_to = if new_worry_level % monkey.test.divisible_by == 0 {
+                    monkey.test.if_true
+                } else {
+                    monkey.test.if_false
+                };
+                input[throw_to].items.push(new_worry_level);
             }
+            input[i].items.clear();
         }
     }
 

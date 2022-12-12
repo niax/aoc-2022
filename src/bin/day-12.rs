@@ -1,32 +1,11 @@
-use aoc2022::commons::{io::load_argv_lines, grid::{Grid, SingleVecGrid}};
-use petgraph::{algo::astar, graph::NodeIndex, Graph};
+use aoc2022::commons::{
+    grid::{Grid, SingleVecGrid},
+    io::load_argv_lines,
+};
+use petgraph::{algo::dijkstra, Graph};
 use std::{collections::HashMap, error::Error};
 
-fn part1(g: &Graph<isize, usize>, start: NodeIndex<u32>, end: NodeIndex<u32>) -> usize {
-    let (cost, _) = astar(
-        &g,
-        end,
-        |finish| finish == start,
-        |e| *e.weight(),
-        |_| 0,
-    )
-    .expect("Should be a path");
-    cost
-}
-
-fn part2(g: &Graph<isize, usize>, end: NodeIndex<u32>) -> usize {
-    let (cost, _) = astar(
-        &g,
-        end,
-        |finish| g.node_weight(finish).unwrap() == &1,
-        |e| *e.weight(),
-        |_| 0,
-    )
-    .unwrap();
-    cost
-}
-
-fn build_graph(input: &[String]) -> (Graph<isize, usize>, NodeIndex<u32>, NodeIndex<u32>) {
+fn solve(input: &[String]) -> (isize, isize) {
     let mut g = Graph::new();
     let mut node_grid = SingleVecGrid::new(input[0].len(), input.len());
     let mut start_node = None;
@@ -40,7 +19,6 @@ fn build_graph(input: &[String]) -> (Graph<isize, usize>, NodeIndex<u32>, NodeIn
             };
             let idx = g.add_node(height);
             node_grid.set((x, y), idx);
-            
 
             if c == 'S' {
                 start_node = Some(idx);
@@ -64,16 +42,30 @@ fn build_graph(input: &[String]) -> (Graph<isize, usize>, NodeIndex<u32>, NodeIn
         }
     }
 
-    (g, start_node.expect("Find start node"), end_node.expect("Find end node"))
+    let costs = dijkstra(&g, end_node.unwrap(), None, |e| *e.weight());
+    let mut weight_costs = HashMap::with_capacity(1024);
+    for (node_idx, cost) in &costs {
+        let weight = g.node_weight(*node_idx).unwrap();
+        let entry = weight_costs.entry(weight);
+        let current = entry.or_insert(isize::MAX);
+        if *current > *cost {
+            *current = *cost;
+        }
+    }
+
+    (
+        *costs.get(&start_node.unwrap()).unwrap(),
+        *weight_costs.get(&1).unwrap(),
+    )
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let input = load_argv_lines().collect::<Result<Vec<_>, _>>()?;
 
-    let (g, start, end) = build_graph(&input);
+    let (part1, part2) = solve(&input);
 
-    println!("{}", part1(&g, start, end));
-    println!("{}", part2(&g, end));
+    println!("{}", part1);
+    println!("{}", part2);
 
     Ok(())
 }
@@ -104,9 +96,9 @@ mod tests {
                 .load_file_lines()
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap();
-            let (g, start, end) = build_graph(&input);
-            assert_eq!(part1(&g, start, end), case.part1_expected);
-            assert_eq!(part2(&g, end), case.part2_expected);
+            let (part1, part2) = solve(&input);
+            assert_eq!(part1, case.part1_expected);
+            assert_eq!(part2, case.part2_expected);
         }
     }
 }

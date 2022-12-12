@@ -1,4 +1,4 @@
-use aoc2022::commons::io::load_argv_lines;
+use aoc2022::commons::{io::load_argv_lines, grid::{Grid, SingleVecGrid}};
 use petgraph::{algo::astar, graph::NodeIndex, Graph};
 use std::{collections::HashMap, error::Error};
 
@@ -28,7 +28,7 @@ fn part2(g: &Graph<isize, usize>, end: NodeIndex<u32>) -> usize {
 
 fn build_graph(input: &[String]) -> (Graph<isize, usize>, NodeIndex<u32>, NodeIndex<u32>) {
     let mut g = Graph::new();
-    let mut node_idx = HashMap::with_capacity(1024);
+    let mut node_grid = SingleVecGrid::new(input[0].len(), input.len());
     let mut start_node = None;
     let mut end_node = None;
     for (y, l) in input.iter().enumerate() {
@@ -39,7 +39,7 @@ fn build_graph(input: &[String]) -> (Graph<isize, usize>, NodeIndex<u32>, NodeIn
                 _ => c as isize - 96,
             };
             let idx = g.add_node(height);
-            node_idx.insert((x as isize, y as isize), idx);
+            node_grid.set((x, y), idx);
             
 
             if c == 'S' {
@@ -50,13 +50,11 @@ fn build_graph(input: &[String]) -> (Graph<isize, usize>, NodeIndex<u32>, NodeIn
         }
     }
 
-    for ((x, y), idx) in node_idx.iter() {
-        let height = *g.node_weight(*idx).unwrap();
-        for (x_delta, y_delta) in [(0, -1), (-1, 0), (0, 1), (1, 0)] {
-            let adj_x = *x + x_delta;
-            let adj_y = *y + y_delta;
-
-            if let Some(&adj_idx) = node_idx.get(&(adj_x, adj_y)) {
+    for y in 0..node_grid.height() {
+        for x in 0..node_grid.width() {
+            let idx = node_grid.at(&(x, y)).unwrap();
+            let height = *g.node_weight(*idx).unwrap();
+            for (_, &adj_idx) in node_grid.adjacent((x, y)) {
                 let adj_height = g.node_weight(adj_idx).expect("Find adjacent node");
 
                 if *adj_height - height <= 1 {

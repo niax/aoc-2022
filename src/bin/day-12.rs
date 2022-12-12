@@ -2,7 +2,8 @@ use aoc2022::commons::io::load_argv_lines;
 use petgraph::{algo::astar, graph::NodeIndex, Graph};
 use std::{collections::HashMap, error::Error};
 
-fn part1(g: &Graph<isize, usize>, chars: &HashMap<char, Vec<NodeIndex<u32>>>) -> usize {
+fn part1(input: &[String]) -> usize {
+    let (g, chars) = build_graph(input, true);
     let start_node = chars.get(&'S').unwrap()[0];
     let end_node = chars.get(&'E').unwrap()[0];
 
@@ -17,28 +18,25 @@ fn part1(g: &Graph<isize, usize>, chars: &HashMap<char, Vec<NodeIndex<u32>>>) ->
     cost
 }
 
-fn part2(g: &Graph<isize, usize>, chars: &HashMap<char, Vec<NodeIndex<u32>>>) -> usize {
-    let mut start_nodes = Vec::new();
-    for &idx in chars.get(&'S').unwrap() {
-        start_nodes.push(idx);
-    }
-    for &idx in chars.get(&'a').unwrap() {
-        start_nodes.push(idx);
-    }
+fn part2(input: &[String]) -> usize {
+    let (g, chars) = build_graph(input, false);
+
     let end_node = chars.get(&'E').unwrap()[0];
 
-    start_nodes
-        .iter()
-        .map(|n| {
-            astar(&g, *n, |finish| finish == end_node, |e| *e.weight(), |_| 0).map(|(cost, _)| cost)
-        })
-        .filter(|o| o.is_some())
-        .min()
-        .unwrap()
-        .unwrap()
+    let (cost, _) = astar(
+        &g,
+        end_node,
+        |finish| g.node_weight(finish).unwrap() == &1,
+        |e| *e.weight(),
+        |_| 0,
+    )
+    .unwrap();
+    cost
 }
 
-fn build_graph(input: &[String]) -> (Graph<isize, usize>, HashMap<char, Vec<NodeIndex<u32>>>) {
+type CharIdxMap = HashMap<char, Vec<NodeIndex<u32>>>;
+
+fn build_graph(input: &[String], part_1_order: bool) -> (Graph<isize, usize>, CharIdxMap) {
     let mut g = Graph::new();
     let mut node_idx = HashMap::new();
     let mut char_places = HashMap::new();
@@ -68,7 +66,11 @@ fn build_graph(input: &[String]) -> (Graph<isize, usize>, HashMap<char, Vec<Node
                 let adj_height = g.node_weight(adj_idx).expect("Find adjacent node");
 
                 if *adj_height - height <= 1 {
-                    g.add_edge(*idx, adj_idx, 1);
+                    if part_1_order {
+                        g.add_edge(*idx, adj_idx, 1);
+                    } else {
+                        g.add_edge(adj_idx, *idx, 1);
+                    }
                 }
             }
         }
@@ -79,10 +81,9 @@ fn build_graph(input: &[String]) -> (Graph<isize, usize>, HashMap<char, Vec<Node
 
 fn main() -> Result<(), Box<dyn Error>> {
     let input = load_argv_lines().collect::<Result<Vec<_>, _>>()?;
-    let (g, chars) = build_graph(&input);
 
-    println!("{}", part1(&g, &chars));
-    println!("{}", part2(&g, &chars));
+    println!("{}", part1(&input));
+    println!("{}", part2(&input));
 
     Ok(())
 }
@@ -113,9 +114,8 @@ mod tests {
                 .load_file_lines()
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap();
-            let (g, chars) = build_graph(&input);
-            assert_eq!(part1(&g, &chars), case.part1_expected);
-            assert_eq!(part2(&g, &chars), case.part2_expected);
+            assert_eq!(part1(&input), case.part1_expected);
+            assert_eq!(part2(&input), case.part2_expected);
         }
     }
 }

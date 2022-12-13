@@ -1,7 +1,7 @@
 use aoc2022::commons::io::load_argv_lines;
 use std::{error::Error, str::FromStr};
 
-peg::parser!{
+peg::parser! {
     grammar signal_parser() for str {
         rule number() -> usize
             = n:$(['0'..='9']+) {? n.parse().or(Err("bad number")) }
@@ -9,7 +9,7 @@ peg::parser!{
         rule number_enum() -> Signal
             = n:number() { Signal::Number(n) }
 
-        rule signal_list() -> Signal 
+        rule signal_list() -> Signal
             = "[" s:signal() ** "," "]"
             {
                 Signal::List(s)
@@ -46,18 +46,15 @@ impl std::cmp::Ord for Signal {
 impl std::cmp::PartialOrd for Signal {
     fn partial_cmp(&self, right: &Self) -> Option<std::cmp::Ordering> {
         match (self, right) {
-            (Signal::Number(l), Signal::Number(r)) => {
-                match l.cmp(r) {
-                    std::cmp::Ordering::Less => Some(std::cmp::Ordering::Less),
-                    std::cmp::Ordering::Greater => Some(std::cmp::Ordering::Greater),
-                    std::cmp::Ordering::Equal => None,
-                }
+            (Signal::Number(l), Signal::Number(r)) => match l.cmp(r) {
+                std::cmp::Ordering::Less => Some(std::cmp::Ordering::Less),
+                std::cmp::Ordering::Greater => Some(std::cmp::Ordering::Greater),
+                std::cmp::Ordering::Equal => None,
             },
             (Signal::List(l), Signal::List(r)) => {
-                let mut l_iter = l.iter();
                 let mut r_iter = r.iter();
 
-                while let Some(l) = l_iter.next() {
+                for l in l.iter() {
                     if let Some(r) = r_iter.next() {
                         if let Some(res) = l.partial_cmp(r) {
                             return Some(res);
@@ -74,20 +71,16 @@ impl std::cmp::PartialOrd for Signal {
                 }
             }
             (Signal::Number(l), Signal::List(_)) => {
-                let mut l_list = Vec::with_capacity(1);
-                l_list.push(Signal::Number(*l));
+                let l_list = vec![Signal::Number(*l)];
                 Signal::List(l_list).partial_cmp(right)
-            },
+            }
             (Signal::List(_), Signal::Number(r)) => {
-                let mut r_list = Vec::with_capacity(1);
-                r_list.push(Signal::Number(*r));
+                let r_list = vec![Signal::Number(*r)];
                 self.partial_cmp(&Signal::List(r_list))
-            },
+            }
             _ => panic!("Not handled {:?}", (self, right)),
         }
     }
-}
-impl Signal {
 }
 
 impl FromStr for Signal {
@@ -105,7 +98,7 @@ fn part1(input: &[Signal]) -> usize {
     while let Some(left) = iter.next() {
         let right = iter.next().unwrap();
 
-        if left.partial_cmp(&right).unwrap().is_lt() {
+        if left.partial_cmp(right).unwrap().is_lt() {
             answer += idx;
         }
         // Discard empty
@@ -116,7 +109,11 @@ fn part1(input: &[Signal]) -> usize {
 }
 
 fn part2(input: &[Signal]) -> usize {
-    let mut input = input.iter().filter(|x| **x != Signal::Empty).cloned().collect::<Vec<_>>();
+    let mut input = input
+        .iter()
+        .filter(|x| **x != Signal::Empty)
+        .cloned()
+        .collect::<Vec<_>>();
     let divider1 = Signal::List(vec![Signal::List(vec![Signal::Number(2)])]);
     let divider2 = Signal::List(vec![Signal::List(vec![Signal::Number(6)])]);
     input.push(divider1.clone());

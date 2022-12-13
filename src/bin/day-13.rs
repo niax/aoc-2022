@@ -3,7 +3,7 @@ use std::{error::Error, str::FromStr};
 
 peg::parser! {
     grammar signal_parser() for str {
-        rule number() -> usize
+        rule number() -> u8
             = n:$(['0'..='9']+) {? n.parse().or(Err("bad number")) }
 
         rule number_enum() -> Signal
@@ -20,8 +20,6 @@ peg::parser! {
                 Signal::Empty
             }
 
-
-
         pub rule signal() -> Signal
             = signal_list() / number_enum();
 
@@ -32,7 +30,7 @@ peg::parser! {
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Signal {
-    Number(usize),
+    Number(u8),
     List(Vec<Signal>),
     Empty,
 }
@@ -112,17 +110,16 @@ fn part2(input: &[Signal]) -> usize {
     let mut input = input
         .iter()
         .filter(|x| **x != Signal::Empty)
-        .cloned()
         .collect::<Vec<_>>();
     let divider1 = Signal::List(vec![Signal::List(vec![Signal::Number(2)])]);
     let divider2 = Signal::List(vec![Signal::List(vec![Signal::Number(6)])]);
-    input.push(divider1.clone());
-    input.push(divider2.clone());
+    input.push(&divider1);
+    input.push(&divider2);
 
     input.sort();
 
-    let first_idx = input.binary_search(&divider1).expect("First index");
-    let second_idx = input.binary_search(&divider2).expect("Second index");
+    let first_idx = input.binary_search(&&divider1).expect("First index");
+    let second_idx = input.binary_search(&&divider2).expect("Second index");
 
     (first_idx + 1) * (second_idx + 1)
 }

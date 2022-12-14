@@ -80,11 +80,14 @@ fn part1(mut input: CaveGrid) -> isize {
             let diag_left = (sand_pos.0 - 1, sand_pos.1 + 1);
             let diag_right = (sand_pos.0 + 1, sand_pos.1 + 1);
 
-            sand_pos = match (input.populated(&below), input.populated(&diag_left), input.populated(&diag_right)) {
-                (false, _, _) => below,
-                (true, false, _) => diag_left,
-                (true, true, false) => diag_right,
-                (true, true, true) => break,
+            sand_pos = if !input.populated(&below) {
+                below
+            } else if !input.populated(&diag_left) {
+                diag_left
+            } else if !input.populated(&diag_right) {
+                diag_right
+            } else {
+                break;
             };
 
             if sand_pos.1 > input.wall_bottom {
@@ -110,11 +113,14 @@ fn part2(mut input: CaveGrid) -> isize {
             let diag_left = (sand_pos.0 - 1, sand_pos.1 + 1);
             let diag_right = (sand_pos.0 + 1, sand_pos.1 + 1);
 
-            sand_pos = match (input.populated(&below), input.populated(&diag_left), input.populated(&diag_right)) {
-                (false, _, _) => below,
-                (true, false, _) => diag_left,
-                (true, true, false) => diag_right,
-                (true, true, true) => break,
+            sand_pos = if !input.populated(&below) {
+                below
+            } else if !input.populated(&diag_left) {
+                diag_left
+            } else if !input.populated(&diag_right) {
+                diag_right
+            } else {
+                break;
             };
         }
         placed += 1;

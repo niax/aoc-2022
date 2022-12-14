@@ -1,5 +1,5 @@
 use aoc2022::commons::{
-    grid::{Grid, BitGrid},
+    grid::{Grid, SingleVecGrid},
     io::load_argv_lines,
 };
 use std::error::Error;
@@ -21,7 +21,7 @@ peg::parser! {
 
 #[derive(Clone)]
 struct CaveGrid {
-    grid: BitGrid,
+    grid: SingleVecGrid<bool>,
     wall_bottom: isize,
 }
 
@@ -30,7 +30,7 @@ const OFFSET: isize = 500;
 impl CaveGrid {
     pub fn new() -> Self {
         Self {
-            grid: BitGrid::new((OFFSET * 4) as usize, OFFSET as usize),
+            grid: SingleVecGrid::new((OFFSET * 4) as usize, OFFSET as usize),
             wall_bottom: isize::MIN,
         }
     }
@@ -39,12 +39,16 @@ impl CaveGrid {
         if point.1 >= self.wall_bottom + 2 {
             true
         } else {
-            *self.grid.at(&((point.0 + OFFSET) as usize, point.1 as usize)).expect("Point should be in grid")
+            *self
+                .grid
+                .at(&((point.0 + OFFSET) as usize, point.1 as usize))
+                .expect("Point should be in grid")
         }
     }
 
     pub fn populate(&mut self, point: (isize, isize)) {
-        self.grid.set(((point.0 + OFFSET) as usize, point.1 as usize), true);
+        self.grid
+            .set(((point.0 + OFFSET) as usize, point.1 as usize), true);
     }
 
     pub fn load_path(&mut self, path: &[(isize, isize)]) {
@@ -67,13 +71,12 @@ impl CaveGrid {
     }
 }
 
-
 fn part1(mut input: CaveGrid) -> isize {
     let sand_drop = (500, 0);
     let mut placed = 0;
 
     'outer: loop {
-        let mut sand_pos = sand_drop.clone();
+        let mut sand_pos = sand_drop;
         loop {
             // Check for move down
             let below = (sand_pos.0, sand_pos.1 + 1);
@@ -106,7 +109,7 @@ fn part2(mut input: CaveGrid) -> isize {
     let mut placed = 0;
 
     'outer: loop {
-        let mut sand_pos = sand_drop.clone();
+        let mut sand_pos = sand_drop;
         loop {
             // Check for move down
             let below = (sand_pos.0, sand_pos.1 + 1);

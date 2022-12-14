@@ -1,5 +1,5 @@
 use aoc2022::commons::{
-    grid::{Grid, BitGrid},
+    grid::{Grid, SparseGrid},
     io::load_argv_lines,
 };
 use std::error::Error;
@@ -21,14 +21,14 @@ peg::parser! {
 
 #[derive(Clone)]
 struct CaveGrid {
-    grid: BitGrid,
+    grid: SparseGrid<bool>,
     wall_bottom: isize,
 }
 
 impl CaveGrid {
     pub fn new() -> Self {
         Self {
-            grid: BitGrid::new(10_000, 1_000),
+            grid: SparseGrid::new(),
             wall_bottom: isize::MIN,
         }
     }
@@ -37,12 +37,12 @@ impl CaveGrid {
         if point.1 >= self.wall_bottom + 2 {
             true
         } else {
-            *self.grid.at(&((point.0 + 5_000) as usize, point.1 as usize)).expect(&format!("Point should be in grid: {:?}", point))
+            self.grid.at(&point).is_some()
         }
     }
 
     pub fn populate(&mut self, point: (isize, isize)) {
-        self.grid.set(((point.0 + 5_000) as usize, point.1 as usize), true);
+        self.grid.set(point, true);
     }
 
     pub fn load_path(&mut self, path: &[(isize, isize)]) {

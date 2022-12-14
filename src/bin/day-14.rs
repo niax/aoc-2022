@@ -1,5 +1,5 @@
 use aoc2022::commons::{
-    grid::{Grid, SparseGrid},
+    grid::{Grid, BitGrid},
     io::load_argv_lines,
 };
 use std::error::Error;
@@ -19,11 +19,33 @@ peg::parser! {
     }
 }
 
-fn part1(input: &[Vec<(isize, isize)>]) -> isize {
-    let mut grid = SparseGrid::new();
-    let mut bottom_point = 0;
+#[derive(Clone)]
+struct CaveGrid {
+    grid: BitGrid,
+    wall_bottom: isize,
+}
 
-    for path in input {
+impl CaveGrid {
+    pub fn new() -> Self {
+        Self {
+            grid: BitGrid::new(10_000, 1_000),
+            wall_bottom: isize::MIN,
+        }
+    }
+
+    pub fn populated(&self, point: &(isize, isize)) -> bool {
+        if point.1 >= self.wall_bottom + 2 {
+            true
+        } else {
+            *self.grid.at(&((point.0 + 5_000) as usize, point.1 as usize)).expect(&format!("Point should be in grid: {:?}", point))
+        }
+    }
+
+    pub fn populate(&mut self, point: (isize, isize)) {
+        self.grid.set(((point.0 + 5_000) as usize, point.1 as usize), true);
+    }
+
+    pub fn load_path(&mut self, path: &[(isize, isize)]) {
         let mut path_iter = path.iter();
         let mut last = path_iter
             .next()
@@ -31,16 +53,20 @@ fn part1(input: &[Vec<(isize, isize)>]) -> isize {
             .clone();
         for n in path_iter {
             let dir = ((n.0 - last.0).signum(), (n.1 - last.1).signum());
-            grid.set(*n, true);
+            self.populate(*n);
+            self.wall_bottom = self.wall_bottom.max(n.1);
 
             while last != *n {
-                grid.set(last, true);
-                bottom_point = bottom_point.max(last.1);
+                self.populate(last);
+                self.wall_bottom = self.wall_bottom.max(last.1);
                 last = ((last.0 + dir.0), (last.1 + dir.1));
             }
         }
     }
+}
 
+
+fn part1(mut input: CaveGrid) -> isize {
     let sand_drop = (500, 0);
     let mut placed = 0;
 
@@ -52,50 +78,25 @@ fn part1(input: &[Vec<(isize, isize)>]) -> isize {
             let diag_left = (sand_pos.0 - 1, sand_pos.1 + 1);
             let diag_right = (sand_pos.0 + 1, sand_pos.1 + 1);
 
-            sand_pos = match (grid.at(&below), grid.at(&diag_left), grid.at(&diag_right)) {
-                (None, _, _) => below,
-                (Some(_), None, _) => diag_left,
-                (Some(_), Some(_), None) => diag_right,
-                (Some(_), Some(_), Some(_)) => break,
+            sand_pos = match (input.populated(&below), input.populated(&diag_left), input.populated(&diag_right)) {
+                (false, _, _) => below,
+                (true, false, _) => diag_left,
+                (true, true, false) => diag_right,
+                (true, true, true) => break,
             };
 
-            if sand_pos.1 > bottom_point {
+            if sand_pos.1 > input.wall_bottom {
                 break 'outer;
             }
         }
         placed += 1;
-        grid.set(sand_pos, true);
+        input.populate(sand_pos);
     }
 
     placed
 }
 
-fn part2(input: &[Vec<(isize, isize)>]) -> isize {
-    let mut grid = SparseGrid::new();
-    let mut bottom_point = 0;
-
-    for path in input {
-        let mut path_iter = path.iter();
-        let mut last = path_iter
-            .next()
-            .expect("path should be at least 1 long")
-            .clone();
-        for n in path_iter {
-            let dir = ((n.0 - last.0).signum(), (n.1 - last.1).signum());
-            grid.set(*n, true);
-
-            while last != *n {
-                grid.set(last, true);
-                bottom_point = bottom_point.max(last.1);
-                last = ((last.0 + dir.0), (last.1 + dir.1));
-            }
-        }
-    }
-
-    for x in -5_000..5_000 {
-        grid.set((x, bottom_point + 2), true);
-    }
-
+fn part2(mut input: CaveGrid) -> isize {
     let sand_drop = (500, 0);
     let mut placed = 0;
 
@@ -107,18 +108,18 @@ fn part2(input: &[Vec<(isize, isize)>]) -> isize {
             let diag_left = (sand_pos.0 - 1, sand_pos.1 + 1);
             let diag_right = (sand_pos.0 + 1, sand_pos.1 + 1);
 
-            sand_pos = match (grid.at(&below), grid.at(&diag_left), grid.at(&diag_right)) {
-                (None, _, _) => below,
-                (Some(_), None, _) => diag_left,
-                (Some(_), Some(_), None) => diag_right,
-                (Some(_), Some(_), Some(_)) => break,
+            sand_pos = match (input.populated(&below), input.populated(&diag_left), input.populated(&diag_right)) {
+                (false, _, _) => below,
+                (true, false, _) => diag_left,
+                (true, true, false) => diag_right,
+                (true, true, true) => break,
             };
         }
         placed += 1;
         if sand_pos == sand_drop {
             break 'outer;
         }
-        grid.set(sand_pos, true);
+        input.populate(sand_pos);
     }
 
     placed
@@ -126,13 +127,14 @@ fn part2(input: &[Vec<(isize, isize)>]) -> isize {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let input = load_argv_lines().collect::<Result<Vec<String>, _>>()?;
-    let input = input
-        .iter()
-        .map(|s| probe_reports::path(s))
-        .collect::<Result<Vec<Vec<(isize, isize)>>, _>>()?;
+    let mut grid = CaveGrid::new();
+    for s in input {
+        let path = probe_reports::path(&s)?;
+        grid.load_path(&path);
+    }
 
-    println!("{}", part1(&input));
-    println!("{}", part2(&input));
+    println!("{}", part1(grid.clone()));
+    println!("{}", part2(grid.clone()));
 
     Ok(())
 }

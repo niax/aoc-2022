@@ -153,6 +153,7 @@ impl Grid for ResizingBitGrid {
     }
 }
 
+#[derive(Clone)]
 pub struct BitGrid {
     values: BitVec,
     width: usize,

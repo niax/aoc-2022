@@ -66,8 +66,69 @@ fn part1(input: &[Reading]) -> usize {
     seen_tiles.len()
 }
 
+struct Ranges {
+    ranges: Vec<(isize, isize)>
+}
+
+impl Ranges {
+    pub fn new() -> Self {
+        Self {
+            ranges: Vec::with_capacity(1_000),
+        }
+    }
+
+    pub fn add(&mut self, range: (isize, isize)) {
+        let new_range = (range.0.max(0), range.1.min(PART2_MAX as isize));
+        self.ranges.push(new_range);
+    }
+
+    pub fn compat(&mut self) {
+        self.ranges.sort();
+        let mut new_ranges = Vec::with_capacity(self.ranges.len());
+        let mut current_min = self.ranges[0].0;
+        let mut current_max = self.ranges[0].1;
+        for range in &self.ranges {
+            let (min, max) = range;
+            if min - 1 <= current_max {
+                // This range extends/contains
+                current_min = current_min.min(*min);
+                current_max = current_max.max(*max);
+            } else {
+                // This is new, and doesn't extend current
+                new_ranges.push((current_min, current_max));
+                current_min = *min;
+                current_max = *max;
+            }
+        }
+        new_ranges.push((current_min, current_max));
+        self.ranges = new_ranges;
+    }
+}
+
+const PART2_MAX: usize = 4_000_000;
+//const PART2_MAX: usize = 20;
+
 fn part2(input: &[Reading]) -> usize {
-    0
+
+    for y in 0..=PART2_MAX {
+        let mut ranges = Ranges::new();
+        for reading in input {
+            let max_distance = reading.sensor.x().abs_diff(*reading.beacon.x()) +
+                reading.sensor.y().abs_diff(*reading.beacon.y());
+
+            let distance = reading.sensor.y().abs_diff(y as isize);
+            if distance <= max_distance {
+                let max_x_delta = distance.abs_diff(max_distance);
+                ranges.add((reading.sensor.x() - max_x_delta as isize, reading.sensor.x() + max_x_delta as isize))
+            }
+        }
+        ranges.compat();
+        if ranges.ranges.len() != 1 {
+            return ((ranges.ranges[0].1 as usize + 1) * 4000000) + y;
+        }
+    }
+
+    unreachable!();
 }
 
 fn main() -> Result<(), Box<dyn Error>> {

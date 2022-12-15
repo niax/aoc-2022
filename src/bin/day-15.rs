@@ -1,9 +1,5 @@
-use aoc2022::commons::{
-    io::load_argv_lines,
-    grid::{SparseGrid, Grid},
-    geom::Point,
-};
-use std::{error::Error, collections::HashSet};
+use aoc2022::commons::{geom::Point, io::load_argv_lines};
+use std::{collections::HashSet, error::Error};
 
 #[derive(Debug)]
 pub struct Reading {
@@ -11,7 +7,7 @@ pub struct Reading {
     beacon: Point<isize>,
 }
 
-peg::parser!{
+peg::parser! {
     grammar sensor() for str {
         rule number() -> isize
             = n:$("-"? ['0'..='9']+) {? n.parse().or(Err("bad number")) }
@@ -28,46 +24,8 @@ peg::parser!{
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
-enum Tile {
-    Sensor,
-    Beacon,
-}
-
-fn part1(input: &[Reading]) -> usize {
-    let mut grid = SparseGrid::new();
-
-    let mut seen_tiles = HashSet::with_capacity(10000);
-    let wanted_y = 2000000;
-
-    for reading in input {
-        grid.set(reading.beacon.tuple_copy(), Tile::Beacon);
-        grid.set(reading.sensor.tuple_copy(), Tile::Sensor);
-
-        let max_distance = reading.sensor.x().abs_diff(*reading.beacon.x()) +
-            reading.sensor.y().abs_diff(*reading.beacon.y());
-
-        for dx in [-1, 1] {
-            let mut point = Point::new(*reading.sensor.x(), wanted_y);
-            let mut distance = reading.sensor.y().abs_diff(*point.y());
-            while distance <= max_distance {
-                //println!("{:?} - {} ({})", point, distance, max_distance);
-                let t = point.tuple_copy();
-                if grid.at(&t).is_none() {
-                    seen_tiles.insert(t);
-                }
-                point += (dx, 0);
-                distance += 1;
-
-            }
-        }
-    }
-
-    seen_tiles.len()
-}
-
 struct Ranges {
-    ranges: Vec<(isize, isize)>
+    ranges: Vec<(isize, isize)>,
 }
 
 impl Ranges {
@@ -78,8 +36,7 @@ impl Ranges {
     }
 
     pub fn add(&mut self, range: (isize, isize)) {
-        let new_range = (range.0.max(0), range.1.min(PART2_MAX as isize));
-        self.ranges.push(new_range);
+        self.ranges.push(range);
     }
 
     pub fn compat(&mut self) {
@@ -105,21 +62,66 @@ impl Ranges {
     }
 }
 
+fn ranges_at_row(input: &[Reading], y: isize) -> Ranges {
+    let mut ranges = Ranges::new();
+    for reading in input {
+        let max_distance = reading.sensor.x().abs_diff(*reading.beacon.x())
+            + reading.sensor.y().abs_diff(*reading.beacon.y());
+
+        let distance = reading.sensor.y().abs_diff(y as isize);
+        if distance <= max_distance {
+            let max_x_delta = distance.abs_diff(max_distance);
+            ranges.add((
+                reading.sensor.x() - max_x_delta as isize,
+                reading.sensor.x() + max_x_delta as isize,
+            ))
+        }
+    }
+    ranges.compat();
+    ranges
+}
+
+const PART1_Y: isize = 2000000;
+
+fn part1(input: &[Reading]) -> usize {
+    let becons_on_row = input
+        .iter()
+        .filter_map(|x| {
+            if *x.beacon.y() == PART1_Y {
+                Some(x.beacon.tuple_copy())
+            } else {
+                None
+            }
+        })
+        .collect::<HashSet<_>>();
+    let ranges = ranges_at_row(input, PART1_Y);
+
+    ranges
+        .ranges
+        .iter()
+        .map(|x| x.0.abs_diff(x.1))
+        .sum::<usize>()
+        - becons_on_row.len()
+        + 1
+}
+
 const PART2_MAX: usize = 4_000_000;
 //const PART2_MAX: usize = 20;
 
 fn part2(input: &[Reading]) -> usize {
-
     for y in 0..=PART2_MAX {
         let mut ranges = Ranges::new();
         for reading in input {
-            let max_distance = reading.sensor.x().abs_diff(*reading.beacon.x()) +
-                reading.sensor.y().abs_diff(*reading.beacon.y());
+            let max_distance = reading.sensor.x().abs_diff(*reading.beacon.x())
+                + reading.sensor.y().abs_diff(*reading.beacon.y());
 
             let distance = reading.sensor.y().abs_diff(y as isize);
             if distance <= max_distance {
                 let max_x_delta = distance.abs_diff(max_distance);
-                ranges.add((reading.sensor.x() - max_x_delta as isize, reading.sensor.x() + max_x_delta as isize))
+                ranges.add((
+                    reading.sensor.x() - max_x_delta as isize,
+                    reading.sensor.x() + max_x_delta as isize,
+                ))
             }
         }
         ranges.compat();
@@ -133,7 +135,10 @@ fn part2(input: &[Reading]) -> usize {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let input = load_argv_lines().collect::<Result<Vec<String>, _>>()?;
-    let input = input.iter().map(|i| sensor::reading(&i)).collect::<Result<Vec<_>, _>>()?;
+    let input = input
+        .iter()
+        .map(|i| sensor::reading(i))
+        .collect::<Result<Vec<_>, _>>()?;
 
     println!("{}", part1(&input));
     println!("{}", part2(&input));

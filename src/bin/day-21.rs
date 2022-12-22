@@ -58,10 +58,7 @@ impl Expression {
     }
 
     fn is_value(&self) -> bool {
-        match self {
-            Self::Value(_) => true,
-            _ => false,
-        }
+        matches!(self, Self::Value(_))
     }
 
     fn value(&self) -> isize {
@@ -76,7 +73,7 @@ impl Expression {
         match self {
             Value(u) => {
                 if *u != want {
-                    panic!("Nope!");
+                    panic!("Nope! {} != {}", *u, want);
                 }
                 want
             }
@@ -168,31 +165,29 @@ fn main() -> Result<(), Box<dyn Error>> {
     let input: Vec<String> = load_argv_lines().collect::<Result<_, _>>()?;
     let input = input
         .iter()
-        .map(|s| expr_parser::assignment(&s))
+        .map(|s| expr_parser::assignment(s))
         .collect::<Result<Vec<_>, _>>()?;
+
     let mut variables = HashMap::new();
     for (k, v) in input {
         variables.insert(k, v);
     }
-    let p1 = variables
-        .get(&"root".to_string())
-        .expect("expect root")
-        .resolve(&variables);
+    let humn = variables.remove(&"humn".to_string()).expect("humn");
+    let root = variables.get(&"root".to_string()).expect("expect root");
+    let root = root.resolve(&variables);
+    variables.insert("humn".to_string(), humn);
+    let p1 = root.resolve(&variables);
     println!("{}", p1.value());
 
     variables.remove(&"humn".to_string());
-    let p2 = variables.get(&"root".to_string()).expect("expect root");
-    if let Expression::Add(l, r) = p2 {
-        let l_val = l.resolve(&variables);
-        let r_val = r.resolve(&variables);
-
-        let (wanted, expr) = if l_val.is_value() {
-            (l_val.value(), r_val)
+    if let Expression::Add(l, r) = root {
+        let (wanted, expr) = if l.is_value() {
+            (l.value(), r)
         } else {
-            (r_val.value(), l_val)
+            (r.value(), l)
         };
 
-        println!("{:?}", expr.reverse(wanted));
+        println!("{}", expr.reverse(wanted));
     } else {
         panic!("shortcut doesn't work");
     }

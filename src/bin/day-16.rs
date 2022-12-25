@@ -183,32 +183,17 @@ fn part2(g: &Graph<&Valve, ()>) -> usize {
                 let mut new_visited = state.opened_valves.clone();
                 new_visited.insert(*neighbour);
 
-                let flow_entry = best_flow_for_valves_open
-                    .entry(new_visited.clone());
+                best_flow_for_valves_open
+                    .entry(new_visited.clone())
+                    .and_modify(|v| *v = combined_flow_at_end.max(*v))
+                    .or_insert(combined_flow_at_end);
 
-                let updated = match flow_entry {
-                    std::collections::hash_map::Entry::Occupied(mut v) => {
-                        if combined_flow_at_end > *v.get() {
-                            v.insert(combined_flow_at_end);
-                            true
-                        } else {
-                            false
-                        }
-                    },
-                    std::collections::hash_map::Entry::Vacant(x) => {
-                        x.insert(combined_flow_at_end);
-                        true
-                    }
-                };
-
-                if updated {
-                    queue.push_back(FlowState {
-                        at: *neighbour,
-                        opened_valves: new_visited,
-                        flow_at_end: combined_flow_at_end,
-                        remaining_minutes: remaining_steps_after_neighbour,
-                    })
-                }
+                queue.push_back(FlowState {
+                    at: *neighbour,
+                    opened_valves: new_visited,
+                    flow_at_end: combined_flow_at_end,
+                    remaining_minutes: remaining_steps_after_neighbour,
+                })
             }
         }
     }
